@@ -1,7 +1,17 @@
 import type { DayFormatMismatch } from '../travel/day-sections';
-import type { NoteType } from '../types';
+import type { NoteType, RecognizedNote } from '../types';
 import { filled } from '../config/validation';
+import { dayFormatMismatch } from '../travel/day-sections';
 
+/**
+ * Judged across every note of the kind in the vault, like the setting it points to, so the trip tab and settings always
+ * agree and a switch is never offered that would stop another trip's headings being read.
+ */
+export function kindDayFormatMismatch(type: NoteType, index: RecognizedNote[], headings: (path: string, level: number) => string[]): DayFormatMismatch | undefined {
+  return type.role === 'entry'
+    ? dayFormatMismatch(index.filter(note => note.typeId === type.id).flatMap(note => headings(note.path, type.days.headingLevel)), type.days.dateFormat)
+    : undefined;
+}
 /** What follows item `index` of `count` in a running list: "A, B and C". */
 export function listSeparator(index: number, count: number): string {
   return index < count - 2

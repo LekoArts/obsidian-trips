@@ -16,9 +16,8 @@ import { filled } from './config/validation';
 import { resolveTargets } from './discovery';
 import { notify } from './notice';
 import { formatDate } from './travel/dates';
-import { dayFormatMismatch } from './travel/day-sections';
 import { confirmAction } from './ui/confirm';
-import { formatWarning } from './ui/day-format';
+import { formatWarning, kindDayFormatMismatch } from './ui/day-format';
 import { labelDialog } from './ui/dialog';
 import { editField } from './ui/field-modal';
 import InstallPreviewComponent from './ui/InstallPreview.svelte';
@@ -762,9 +761,7 @@ export class TravelSettingsTab extends PluginSettingTab {
 
   private dayHeadings(type: NoteType, index: number): SettingDefinition[] {
     const entry = type.role === 'entry';
-    const mismatch = entry
-      ? dayFormatMismatch(this.host.index.filter(note => note.typeId === type.id).flatMap(note => this.host.io.headings(note.path, type.days.headingLevel)), type.days.dateFormat)
-      : undefined;
+    const mismatch = kindDayFormatMismatch(type, this.host.index, (path, level) => this.host.io.headings(path, level));
     const suggestion = mismatch?.suggestion;
     return [
       {

@@ -1,4 +1,5 @@
 import type { Occurrence } from '../../travel/assignments';
+import type { DayFormatMismatch } from '../../travel/day-sections';
 import type { Span } from '../../travel/schedule';
 import type { ItineraryModel, ItineraryNote } from './model';
 import { getLanguage } from 'obsidian';
@@ -45,28 +46,29 @@ export interface EntryRow {
 export interface FormatProblem { kind: string; lead: string; notes: { name: string; path: string }[]; fix: string }
 export interface TripLayout { entries: EntryRow[]; unplanned: ItineraryNote[]; attention: { name: string; path: string; message: string }[]; formats: FormatProblem[] }
 
-function formatProblems(notes: ItineraryNote[]): FormatProblem[] {
-  const groups = new Map<string, ItineraryNote[]>();
+function formatProblems(notes: ItineraryNote[], verdicts: Record<string, DayFormatMismatch>): FormatProblem[] {
+  const groups = new Map<string, { note: ItineraryNote; example: string }[]>();
   for (const note of notes) {
-    if (dayFormatMismatch(note.dayHeadings, note.type.days.dateFormat)) {
+    const own = dayFormatMismatch(note.dayHeadings, note.type.days.dateFormat);
+    if (own) {
       groups.set(note.type.id, [
         ...groups.get(note.type.id) ?? [],
-        note,
+        { note, example: own.example },
       ]);
     }
   }
+  // The fix comes from the kind's verdict across the vault, so it matches settings; the example from this trip.
   return [
     ...groups.values(),
   ].flatMap((group) => {
-    const type = group[0]!.type;
-    // Judged across all of the kind's notes, so a switch is never offered that would stop others being read.
-    const mismatch = dayFormatMismatch(notes.filter(note => note.type.id === type.id).flatMap(note => note.dayHeadings), type.days.dateFormat);
+    const type = group[0]!.note.type;
+    const mismatch = verdicts[type.id];
     return mismatch
       ? [
           {
             kind: type.label,
-            lead: `day headings like ${mismatch.example} aren’t read as days in`,
-            notes: group.map(note => ({
+            lead: `day headings like ${group[0]!.example} aren’t read as days in`,
+            notes: group.map(({ note }) => ({
               name: noteName(note.snapshot.path),
               path: note.snapshot.path,
             })),
@@ -195,7 +197,7 @@ export function tripLayout(model: ItineraryModel, paths: string[]): TripLayout {
     entries,
     unplanned: model.activities.filter(note => !planned.has(note.snapshot.path)),
     attention,
-    formats: formatProblems(sorted),
+    formats: formatProblems(sorted, model.dayFormats),
   };
 }
 /** Tones cycle in start order, so consecutive and overlapping entries never share one. */

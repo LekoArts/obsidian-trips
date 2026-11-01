@@ -3,6 +3,7 @@ import type { YamlCodec } from '../../config/template-render';
 import type { BatchIO } from '../../editing/batch';
 import type { FileSnapshot } from '../../editing/conflicts';
 import type { Occurrence } from '../../travel/assignments';
+import type { DayFormatMismatch } from '../../travel/day-sections';
 import type { NoteType, PlannerSettings, RecognizedNote } from '../../types';
 import type { CreationOptions } from '../creation/modal';
 import { tripContents } from '../../config/profile';
@@ -11,11 +12,12 @@ import { filled } from '../../config/validation';
 import { capture } from '../../editing/conflicts';
 import { dailyOccurrences } from '../../travel/assignments';
 import { dayHeadingTexts } from '../../travel/day-sections';
+import { kindDayFormatMismatch } from '../day-format';
 
 export interface ItineraryDataHost {
   settings: PlannerSettings;
   index: RecognizedNote[];
-  io: BatchIO & { paths: () => string[]; codec: YamlCodec };
+  io: BatchIO & { paths: () => string[]; codec: YamlCodec; headings: (path: string, level: number) => string[] };
 }
 export interface ItineraryHost extends ItineraryDataHost { app: App; subscribe: (listener: (notes: RecognizedNote[]) => void) => () => void; openCreation: (options: CreationOptions) => void }
 /** What a trip tab remembers across restarts: UI state only, never trip data. */
@@ -44,6 +46,8 @@ export interface ItineraryModel {
   creatable: string[];
   /** The kind + Activity creates: one whose Base the trip embeds, else the kind of its existing activities, else one without a Base. */
   activityKind?: NoteType;
+  /** Per entry kind id, its day headings in another date format across the vault, the same verdict settings shows. */
+  dayFormats: Record<string, DayFormatMismatch>;
 }
 export function tripPaths(host: ItineraryDataHost): string[] {
   return host.index.filter(note => host.settings.profile.types.find(type => type.id === note.typeId)?.role === 'trip' && !note.diagnostics.some(d => d.capability === 'recognition')).map(note => note.path);
@@ -132,5 +136,13 @@ export async function loadItinerary(host: ItineraryDataHost, path: string): Prom
     kinds: structuredClone(kinds),
     creatable,
     activityKind: activityKind && structuredClone(activityKind),
+    dayFormats: Object.fromEntries(host.settings.profile.types.flatMap((type) => {
+      const mismatch = kindDayFormatMismatch(type, host.index, host.io.headings.bind(host.io));
+      return mismatch
+        ? [
+            [type.id, mismatch],
+          ]
+        : [];
+    })),
   };
 }

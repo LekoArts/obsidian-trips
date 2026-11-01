@@ -1,5 +1,6 @@
 import type { FileSnapshot } from './conflicts';
 import { parseProperties, splitNote } from '../config/template-render';
+import { headings } from '../travel/day-sections';
 import { assertFresh } from './conflicts';
 
 /** JSON is a YAML subset. Fixtures exercise the IO contract, not Obsidian's YAML parser. */
@@ -14,6 +15,19 @@ export class TestVault {
   };
 
   exists(path: string): boolean { return this.files.has(path); }
+  /** Stands in for Obsidian's metadata cache, which also skips headings in code blocks and comments and never throws. */
+  headings(path: string, level: number): string[] {
+    const content = this.files.get(path);
+    try {
+      return content === undefined
+        ? []
+        : headings(splitNote(content).body).filter(heading => heading.level === level).map(heading => heading.text);
+    }
+    catch {
+      return [];
+    }
+  }
+
   async read(path: string): Promise<string> {
     const content = this.files.get(path);
     return content === undefined
