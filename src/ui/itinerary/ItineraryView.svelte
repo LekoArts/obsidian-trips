@@ -901,7 +901,7 @@
     {#if layout.attention.length || layout.formats.length}
       <section class='travel-attention' aria-labelledby='travel-attention'>
         <h3 id='travel-attention'>Needs attention</h3>
-        <ul>{#each layout.formats as problem (problem.kind)}
+        <ul>{#each layout.formats as problem (problem.kindId)}
           <li><strong>{problem.kind}</strong> {problem.lead} {#each problem.notes as note, index (note.path)}<button class='travel-link-button' use:noteLink={note.path}>{note.name}</button>{listSeparator(index, problem.notes.length)}{/each}. {problem.fix}</li>
         {/each}{#each layout.attention as item, index (`${item.path}:${index}`)}
           {@const row = layout.entries.find(row => row.note.snapshot.path === item.path)}

@@ -70,11 +70,14 @@ export class ObsidianVault implements InstallIO, DiscoveryIO {
 
   exists(path: string): boolean { return this.app.vault.getAbstractFileByPath(path) !== null; }
   paths(): string[] { return this.app.vault.getFiles().map(file => file.path); }
-  /** A note's headings at `level`, from Obsidian's metadata cache (which skips code blocks), without reading the file. */
+  /**
+   * A note's `#` headings at `level`, from Obsidian's metadata cache (which skips code blocks), without reading the file.
+   * Underlined (setext) headings span two lines and are left out, since day sections are only read from `#` headings.
+   */
   headings(path: string, level: number): string[] {
     const file = this.app.vault.getFileByPath(path);
     return file
-      ? (this.app.metadataCache.getFileCache(file)?.headings ?? []).filter(heading => heading.level === level).map(heading => heading.heading)
+      ? (this.app.metadataCache.getFileCache(file)?.headings ?? []).filter(heading => heading.level === level && heading.position.start.line === heading.position.end.line).map(heading => heading.heading)
       : [];
   }
 

@@ -36,6 +36,7 @@ it('day headings in another date format are reported once per kind, so activitie
   });
   expect(layout.formats).toEqual([
     {
+      kindId: 'entry',
       kind: model.entries[0]!.type.label,
       lead: 'day headings like 10.05.2026 aren\u2019t read as days in',
       notes: [
@@ -59,7 +60,7 @@ it('no switch is offered when another note of the kind already uses the configur
   ])).toEqual([
     [
       ['Busan'],
-      'They mix DD.MM.YYYY and YYYY-MM-DD; only YYYY-MM-DD is read.',
+      'They mix YYYY-MM-DD with DD.MM.YYYY; only YYYY-MM-DD is read.',
     ],
   ]);
 });
@@ -88,7 +89,7 @@ it('the trip tab offers the switch settings offers, judged on the kind across tr
       formatFix(kindDayFormatMismatch(entry, host.index, io.headings.bind(io))!, 'YYYY-MM-DD'),
     ],
   ]);
-  expect(layout.formats[0]!.fix).toBe('They mix DD.MM.YYYY and YYYY-MM-DD; only YYYY-MM-DD is read.');
+  expect(layout.formats[0]!.fix).toBe('They mix YYYY-MM-DD with DD.MM.YYYY; only YYYY-MM-DD is read.');
 });
 it('broken and out-of-trip dates are reported', async () => {
   const { layout } = await load({

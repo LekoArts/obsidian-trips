@@ -43,7 +43,7 @@ export interface EntryRow {
  * Notes of one kind whose day headings are in another date format, reported once for the kind since one setting fixes
  * them all. `lead` and `fix` go before and after the linked note names.
  */
-export interface FormatProblem { kind: string; lead: string; notes: { name: string; path: string }[]; fix: string }
+export interface FormatProblem { kindId: string; kind: string; lead: string; notes: { name: string; path: string }[]; fix: string }
 export interface TripLayout { entries: EntryRow[]; unplanned: ItineraryNote[]; attention: { name: string; path: string; message: string }[]; formats: FormatProblem[] }
 
 function formatProblems(notes: ItineraryNote[], verdicts: Record<string, DayFormatMismatch>): FormatProblem[] {
@@ -66,6 +66,7 @@ function formatProblems(notes: ItineraryNote[], verdicts: Record<string, DayForm
     return mismatch
       ? [
           {
+            kindId: type.id,
             kind: type.label,
             lead: `day headings like ${group[0]!.example} aren’t read as days in`,
             notes: group.map(({ note }) => ({

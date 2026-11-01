@@ -11,7 +11,6 @@ import { parseProperties, splitNote } from '../../config/template-render';
 import { filled } from '../../config/validation';
 import { capture } from '../../editing/conflicts';
 import { dailyOccurrences } from '../../travel/assignments';
-import { dayHeadingTexts } from '../../travel/day-sections';
 import { kindDayFormatMismatch } from '../day-format';
 
 export interface ItineraryDataHost {
@@ -31,7 +30,7 @@ export interface ItineraryNote {
   parentPath?: string;
   diagnostics: string[];
   daily: Occurrence[];
-  /** The text of every heading at the day-heading level, so headings in another date format can be reported. */
+  /** Headings at the day-heading level, from the same source as the kind-wide `dayFormats` verdict so both agree. */
   dayHeadings: string[];
 }
 export interface ItineraryModel {
@@ -65,11 +64,8 @@ export async function loadItinerary(host: ItineraryDataHost, path: string): Prom
     // Date problems are recomputed per row by the trip layout, so only the other capabilities are carried here.
     const diagnostics = note.diagnostics.filter(d => d.capability !== 'dates').map(d => d.message);
     let daily: Occurrence[] = [];
-    let dayHeadings: string[] = [];
     try {
       daily = dailyOccurrences(parts.body, type.days);
-      if (type.role === 'entry')
-        dayHeadings = dayHeadingTexts(parts.body, type.days);
     }
     catch (error) { diagnostics.push(String(error)); }
     return {
@@ -85,7 +81,9 @@ export async function loadItinerary(host: ItineraryDataHost, path: string): Prom
         : '',
       diagnostics,
       daily,
-      dayHeadings,
+      dayHeadings: type.role === 'entry'
+        ? host.io.headings(note.path, type.days.headingLevel)
+        : [],
     };
   }
   const recognized = host.index.find(note => note.path === path);
@@ -136,7 +134,8 @@ export async function loadItinerary(host: ItineraryDataHost, path: string): Prom
     kinds: structuredClone(kinds),
     creatable,
     activityKind: activityKind && structuredClone(activityKind),
-    dayFormats: Object.fromEntries(host.settings.profile.types.flatMap((type) => {
+    // Only the kinds this trip has, as each verdict scans every note of its kind in the vault.
+    dayFormats: Object.fromEntries(host.settings.profile.types.filter(type => entries.some(entry => entry.type.id === type.id)).flatMap((type) => {
       const mismatch = kindDayFormatMismatch(type, host.index, host.io.headings.bind(host.io));
       return mismatch
         ? [

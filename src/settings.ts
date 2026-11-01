@@ -761,7 +761,8 @@ export class TravelSettingsTab extends PluginSettingTab {
 
   private dayHeadings(type: NoteType, index: number): SettingDefinition[] {
     const entry = type.role === 'entry';
-    const mismatch = kindDayFormatMismatch(type, this.host.index, (path, level) => this.host.io.headings(path, level));
+    const verdict = () => kindDayFormatMismatch(type, this.host.index, (path, level) => this.host.io.headings(path, level));
+    const mismatch = verdict();
     const suggestion = mismatch?.suggestion;
     return [
       {
@@ -779,7 +780,10 @@ export class TravelSettingsTab extends PluginSettingTab {
         desc: `Detected in your ${type.label} notes. Changes this setting only; your notes stay as they are.`,
         visible: filled(suggestion),
         searchable: false,
-        action: () => void this.setControlValue(`kind.${index}.dateFormat`, suggestion),
+        // Notes may have changed since this was drawn; switch only if it would still read every day heading.
+        action: () => verdict()?.suggestion === suggestion
+          ? void this.setControlValue(`kind.${index}.dateFormat`, suggestion)
+          : this.update(),
       },
       {
         name: 'Day-heading level',

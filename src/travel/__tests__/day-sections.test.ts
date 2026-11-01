@@ -1,6 +1,6 @@
 import type { DaySections } from '../../types';
 import { expect, it } from 'vitest';
-import { dayFormatMismatch, dayHeadingTexts, generateDays } from '../day-sections';
+import { dayFormatMismatch, generateDays } from '../day-sections';
 
 const config: DaySections = {
   enabled: true,
@@ -62,42 +62,56 @@ it('day headings can use any readable Moment format, and are recognised in it ag
   expect(generateDays(once, '2026-05-27', '2026-05-28', named)).toBe(once);
 });
 it('headings written in another date format are reported with the one format they all use', () => {
-  const body = '## 10.05.2026\n- KTX\n### Activities\n- [[Busan - Fotos]]\n## 11.05.2026\n## Notes\n### 12.05.2026\n```\n## 13/05/2026\n```\n';
-  expect(dayFormatMismatch(dayHeadingTexts(body, config), config.dateFormat)).toEqual({
+  expect(dayFormatMismatch(['10.05.2026', '11.05.2026', 'Notes'], 'YYYY-MM-DD')).toEqual({
     example: '10.05.2026',
     formats: ['DD.MM.YYYY'],
+    candidates: [],
     mixed: false,
     suggestion: 'DD.MM.YYYY',
   });
-  expect(dayFormatMismatch(dayHeadingTexts(body, config), 'DD.MM.YYYY')).toBeUndefined();
-  expect(dayFormatMismatch(dayHeadingTexts('## Notes\n## Day 1\n## 2026\n', config), config.dateFormat)).toBeUndefined();
+  expect(dayFormatMismatch(['10.05.2026', '11.05.2026'], 'DD.MM.YYYY')).toBeUndefined();
+  expect(dayFormatMismatch(['Notes', 'Day 1', '2026'], 'YYYY-MM-DD')).toBeUndefined();
 });
 it('a format is suggested only when it is the only fit and no heading already uses the configured one', () => {
-  expect(dayFormatMismatch(['05/06/2026'], 'YYYY-MM-DD')).toEqual({
-    example: '05/06/2026',
-    formats: ['DD/MM/YYYY'],
-    mixed: false,
-  });
   expect(dayFormatMismatch(['05/06/2026', '25/06/2026'], 'YYYY-MM-DD')).toEqual({
     example: '05/06/2026',
     formats: ['DD/MM/YYYY'],
+    candidates: [],
     mixed: false,
     suggestion: 'DD/MM/YYYY',
   });
   expect(dayFormatMismatch(['2026-05-10', '11.05.2026'], 'YYYY-MM-DD')).toEqual({
     example: '11.05.2026',
     formats: ['DD.MM.YYYY'],
+    candidates: [],
     mixed: true,
-  });
-  expect(dayFormatMismatch(['10.05.2026', '11.05.2026', '12/05/2026'], 'YYYY-MM-DD')).toEqual({
-    example: '10.05.2026',
-    formats: ['DD.MM.YYYY', 'DD/MM/YYYY'],
-    mixed: false,
   });
   expect(dayFormatMismatch(['10.5.2026'], 'YYYY-MM-DD')).toEqual({
     example: '10.5.2026',
     formats: ['D.M.YYYY'],
+    candidates: [],
     mixed: false,
     suggestion: 'D.M.YYYY',
+  });
+});
+it('a heading that fits several formats is not guessed: it is counted towards the format other headings share', () => {
+  expect(dayFormatMismatch(['05/06/2026'], 'YYYY-MM-DD')).toEqual({
+    example: '05/06/2026',
+    formats: ['DD/MM/YYYY'],
+    candidates: ['DD/MM/YYYY', 'MM/DD/YYYY'],
+    mixed: false,
+  });
+  expect(dayFormatMismatch(['2026-07-01', '05/06/2026', '11/25/2026'], 'YYYY-MM-DD')).toEqual({
+    example: '05/06/2026',
+    formats: ['MM/DD/YYYY'],
+    candidates: [],
+    mixed: true,
+  });
+  expect(dayFormatMismatch(['05/06/2026', '11/25/2026'], 'YYYY-MM-DD')?.suggestion).toBe('MM/DD/YYYY');
+  expect(dayFormatMismatch(['10.05.2026', '11.05.2026', '12/05/2026'], 'YYYY-MM-DD')).toEqual({
+    example: '10.05.2026',
+    formats: ['DD.MM.YYYY', 'DD/MM/YYYY'],
+    candidates: [],
+    mixed: false,
   });
 });
