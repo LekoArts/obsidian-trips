@@ -1,5 +1,11 @@
 # trips
 
+## 1.1.2
+
+### Patch Changes
+
+- [#6](https://github.com/LekoArts/obsidian-trips/pull/6) [`2ee39cd`](https://github.com/LekoArts/obsidian-trips/commit/2ee39cd60271c29326149d41761ed08c943abb18) - When you install the travel setup in a vault whose existing notes write day headings in another date format, for example `## 10.05.2026` instead of `## 2026-05-10`, Trips now says so right away. Before, activities under those headings silently showed as not on a day. If the headings consistently use one format, it offers to switch the kind's day-heading format to it; if they mix formats, or a date could be read two ways, it names them instead. Notes are never changed. The day-heading format setting now previews today's full heading, for example `## 2026-11-01`.
+
 ## 1.1.1
 
 ### Patch Changes
