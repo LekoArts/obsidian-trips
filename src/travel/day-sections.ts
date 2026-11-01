@@ -154,29 +154,49 @@ const COMMON_DAY_FORMATS = [
   'ddd, D MMM YYYY',
   'ddd, MMM D, YYYY',
 ];
-export interface DayFormatMismatch { example: string; suggestion?: string }
 /**
- * Headings that look like dates but aren't in `format`, so they silently aren't days. Strict parsing tells
- * `10.05.2026` (DD.MM.YYYY) from `10.5.2026` (D.M.YYYY). The suggestion is offered only when exactly one format fits
- * every such heading and no heading already uses `format`, so switching to it never stops other headings being read.
+ * Day headings that look like dates but aren't in the configured format, so they silently aren't days.
+ * `formats`: the other formats they are written in, most used first; a heading that fits several (05/06/2026) counts
+ * towards one another heading proves, else the first listed, so mixed headings are still reported as mixed.
+ * `mixed`: some headings do use the configured format.
+ * `suggestion`: the one format every such heading fits, offered only when no heading uses the configured format, so
+ * switching never stops other headings being read.
  */
+export interface DayFormatMismatch { example: string; formats: string[]; mixed: boolean; suggestion?: string }
 export function dayFormatMismatch(texts: string[], format: string): DayFormatMismatch | undefined {
   const reads = (candidate: string) => (text: string) => filled(parseDate(text, candidate));
   const read = texts.filter(reads(format));
-  const dated = texts.filter(text => !read.includes(text) && COMMON_DAY_FORMATS.some(candidate => reads(candidate)(text)));
-  const example = dated[0];
+  const dated = texts.filter(text => !read.includes(text)).map(text => ({
+    text,
+    fits: COMMON_DAY_FORMATS.filter(candidate => reads(candidate)(text)),
+  })).filter(heading => heading.fits.length);
+  const example = dated[0]?.text;
   if (!filled(example))
     return undefined;
-  const fits = read.length
-    ? []
-    : COMMON_DAY_FORMATS.filter(candidate => candidate !== format && dated.every(reads(candidate)));
-  return fits.length === 1
-    ? { example, suggestion: fits[0] }
-    : { example };
+  const proven = new Set(dated.flatMap(heading => heading.fits.length === 1
+    ? heading.fits
+    : []));
+  const counts = new Map<string, number>();
+  for (const heading of dated) {
+    const used = heading.fits.find(fit => proven.has(fit)) ?? heading.fits[0]!;
+    counts.set(used, (counts.get(used) ?? 0) + 1);
+  }
+  const formats = [
+    ...counts.keys(),
+  ].sort((a, b) => counts.get(b)! - counts.get(a)!);
+  const common = COMMON_DAY_FORMATS.filter(candidate => dated.every(heading => heading.fits.includes(candidate)));
+  return {
+    example,
+    formats,
+    mixed: read.length > 0,
+    ...(read.length === 0 && common.length === 1
+      ? { suggestion: common[0] }
+      : {}),
+  };
 }
-/** The day-level headings of a body that look like dates in another format; throws like `headings`. */
-export function bodyDayFormatMismatch(body: string, config: DaySections): DayFormatMismatch | undefined {
-  return dayFormatMismatch(headings(body).filter(heading => heading.level === config.headingLevel).map(heading => heading.text), config.dateFormat);
+/** The text of a body's headings at the day-heading level; throws like `headings`. */
+export function dayHeadingTexts(body: string, config: DaySections): string[] {
+  return headings(body).filter(heading => heading.level === config.headingLevel).map(heading => heading.text);
 }
 function separator(before: string, newline: string): string {
   return before.endsWith(newline + newline)

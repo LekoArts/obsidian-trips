@@ -3,7 +3,6 @@ import type { YamlCodec } from '../../config/template-render';
 import type { BatchIO } from '../../editing/batch';
 import type { FileSnapshot } from '../../editing/conflicts';
 import type { Occurrence } from '../../travel/assignments';
-import type { DayFormatMismatch } from '../../travel/day-sections';
 import type { NoteType, PlannerSettings, RecognizedNote } from '../../types';
 import type { CreationOptions } from '../creation/modal';
 import { tripContents } from '../../config/profile';
@@ -11,14 +10,7 @@ import { parseProperties, splitNote } from '../../config/template-render';
 import { filled } from '../../config/validation';
 import { capture } from '../../editing/conflicts';
 import { dailyOccurrences } from '../../travel/assignments';
-import { bodyDayFormatMismatch } from '../../travel/day-sections';
-
-function dayFormatProblem(mismatch: DayFormatMismatch, type: NoteType): string {
-  const fix = filled(mismatch.suggestion)
-    ? `set the ${type.label} day-heading format to ${mismatch.suggestion}`
-    : `change the ${type.label} day-heading format (${type.days.dateFormat}) to match`;
-  return `Day headings like ${mismatch.example} aren’t read as days: ${fix} in Trips settings.`;
-}
+import { dayHeadingTexts } from '../../travel/day-sections';
 
 export interface ItineraryDataHost {
   settings: PlannerSettings;
@@ -37,6 +29,8 @@ export interface ItineraryNote {
   parentPath?: string;
   diagnostics: string[];
   daily: Occurrence[];
+  /** The text of every heading at the day-heading level, so headings in another date format can be reported. */
+  dayHeadings: string[];
 }
 export interface ItineraryModel {
   profile: string;
@@ -67,13 +61,11 @@ export async function loadItinerary(host: ItineraryDataHost, path: string): Prom
     // Date problems are recomputed per row by the trip layout, so only the other capabilities are carried here.
     const diagnostics = note.diagnostics.filter(d => d.capability !== 'dates').map(d => d.message);
     let daily: Occurrence[] = [];
+    let dayHeadings: string[] = [];
     try {
       daily = dailyOccurrences(parts.body, type.days);
-      const mismatch = type.role === 'entry'
-        ? bodyDayFormatMismatch(parts.body, type.days)
-        : undefined;
-      if (mismatch)
-        diagnostics.push(dayFormatProblem(mismatch, type));
+      if (type.role === 'entry')
+        dayHeadings = dayHeadingTexts(parts.body, type.days);
     }
     catch (error) { diagnostics.push(String(error)); }
     return {
@@ -89,6 +81,7 @@ export async function loadItinerary(host: ItineraryDataHost, path: string): Prom
         : '',
       diagnostics,
       daily,
+      dayHeadings,
     };
   }
   const recognized = host.index.find(note => note.path === path);

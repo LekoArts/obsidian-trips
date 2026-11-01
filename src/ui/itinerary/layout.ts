@@ -6,7 +6,9 @@ import { noteName } from '../../config/paths';
 import { filled } from '../../config/validation';
 import { linkTarget, resolveTargets } from '../../discovery';
 import { addDays, inclusiveDays } from '../../travel/dates';
+import { dayFormatMismatch } from '../../travel/day-sections';
 import { validSpan } from '../../travel/schedule';
+import { formatFix } from '../day-format';
 
 /** Every note a link could mean: the one beside the linking note if there is one, else every match in the vault. */
 export function linkMatches(paths: string[], from: string, link: string): string[] {
@@ -36,7 +38,44 @@ export interface EntryRow {
   outside: (DayActivity & { date: string })[];
   warnings: string[];
 }
-export interface TripLayout { entries: EntryRow[]; unplanned: ItineraryNote[]; attention: { name: string; path: string; message: string }[] }
+/**
+ * Notes of one kind whose day headings are in another date format, reported once for the kind since one setting fixes
+ * them all. `lead` and `fix` go before and after the linked note names.
+ */
+export interface FormatProblem { kind: string; lead: string; notes: { name: string; path: string }[]; fix: string }
+export interface TripLayout { entries: EntryRow[]; unplanned: ItineraryNote[]; attention: { name: string; path: string; message: string }[]; formats: FormatProblem[] }
+
+function formatProblems(notes: ItineraryNote[]): FormatProblem[] {
+  const groups = new Map<string, ItineraryNote[]>();
+  for (const note of notes) {
+    if (dayFormatMismatch(note.dayHeadings, note.type.days.dateFormat)) {
+      groups.set(note.type.id, [
+        ...groups.get(note.type.id) ?? [],
+        note,
+      ]);
+    }
+  }
+  return [
+    ...groups.values(),
+  ].flatMap((group) => {
+    const type = group[0]!.type;
+    // Judged across all of the kind's notes, so a switch is never offered that would stop others being read.
+    const mismatch = dayFormatMismatch(notes.filter(note => note.type.id === type.id).flatMap(note => note.dayHeadings), type.days.dateFormat);
+    return mismatch
+      ? [
+          {
+            kind: type.label,
+            lead: `day headings like ${mismatch.example} aren’t read as days in`,
+            notes: group.map(note => ({
+              name: noteName(note.snapshot.path),
+              path: note.snapshot.path,
+            })),
+            fix: formatFix(mismatch, type.days.dateFormat),
+          },
+        ]
+      : [];
+  });
+}
 
 /** Day and month names in Obsidian's language. */
 function dates(options: Intl.DateTimeFormatOptions): Intl.DateTimeFormat {
@@ -156,6 +195,7 @@ export function tripLayout(model: ItineraryModel, paths: string[]): TripLayout {
     entries,
     unplanned: model.activities.filter(note => !planned.has(note.snapshot.path)),
     attention,
+    formats: formatProblems(sorted),
   };
 }
 /** Tones cycle in start order, so consecutive and overlapping entries never share one. */

@@ -18,6 +18,7 @@ import { notify } from './notice';
 import { formatDate } from './travel/dates';
 import { dayFormatMismatch } from './travel/day-sections';
 import { confirmAction } from './ui/confirm';
+import { formatWarning } from './ui/day-format';
 import { labelDialog } from './ui/dialog';
 import { editField } from './ui/field-modal';
 import InstallPreviewComponent from './ui/InstallPreview.svelte';
@@ -153,11 +154,6 @@ function defaultText(field: FieldDefinition): string {
       : JSON.stringify(value)}`;
 }
 
-/**
- * Settings are Obsidian's own declarative settings, so they render natively and show up in settings search. Each
- * change is checked against the whole setup (templates and Bases included) before it is saved; a change that would
- * make the setup invalid is refused inline and the last valid setup stays active.
- */
 /** Like core Daily notes: a link to the format reference and today's heading in the current format. */
 function dayFormatHelp(type: NoteType, mismatch: DayFormatMismatch | undefined): DocumentFragment {
   return createFragment((el) => {
@@ -168,11 +164,19 @@ function dayFormatHelp(type: NoteType, mismatch: DayFormatMismatch | undefined):
     el.appendText(`Today's day heading would be: ${'#'.repeat(type.days.headingLevel)} ${formatDate(moment.utc().local().format('YYYY-MM-DD'), type.days.dateFormat)}`);
     if (mismatch) {
       el.createEl('br');
-      el.createSpan({ cls: 'mod-warning', text: `${type.label} notes have headings like ${mismatch.example}, which this format doesn’t read as days.` });
+      el.createSpan({
+        cls: 'mod-warning',
+        text: formatWarning(type, mismatch),
+      });
     }
   });
 }
 
+/**
+ * Settings are Obsidian's own declarative settings, so they render natively and show up in settings search. Each
+ * change is checked against the whole setup (templates and Bases included) before it is saved; a change that would
+ * make the setup invalid is refused inline and the last valid setup stays active.
+ */
 export class TravelSettingsTab extends PluginSettingTab {
   private bindings = new Map<string, Binding>();
   private templates = new Map<string, string>();
@@ -774,8 +778,8 @@ export class TravelSettingsTab extends PluginSettingTab {
         },
       },
       {
-        name: `Use ${suggestion ?? ''}`,
-        desc: 'The format those headings use. Changes this setting only; your notes stay as they are.',
+        name: `Switch to ${suggestion ?? ''}`,
+        desc: `Detected in your ${type.label} notes. Changes this setting only; your notes stay as they are.`,
         visible: filled(suggestion),
         searchable: false,
         action: () => void this.setControlValue(`kind.${index}.dateFormat`, suggestion),
