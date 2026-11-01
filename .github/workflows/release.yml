@@ -1,43 +1,79 @@
 name: Release
 
 # Changesets on main open a "Version packages" pull request. Merging it leaves main without changesets and with a
-# manifest version that has no tag yet; this workflow then builds, attests and releases exactly that version.
+# manifest version that has no tag yet; the release job then builds, attests and releases exactly that version.
+# Layout follows https://changesets.dev/guide/automating: no default permissions, each job gets only what it needs.
 on:
   push:
     branches: [main]
 
-concurrency: release
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
 
 jobs:
-  release:
+  select-mode:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
-      pull-requests: write
-      id-token: write
-      attestations: write
+      contents: read # to check out repo (actions/checkout)
+    outputs:
+      mode: ${{ steps.select-mode.outputs.mode }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v7
         with:
           node-version: 24
-          cache: pnpm
+          package-manager-cache: false # avoid cache poisoning in release jobs
       - run: pnpm install --frozen-lockfile
+      - name: Select Changesets mode
+        id: select-mode
+        uses: changesets/action/select-mode@v2
 
-      - name: Open or update the version pull request
-        id: changesets
-        uses: changesets/action@v2
+  version:
+    if: needs.select-mode.outputs.mode == 'version'
+    needs: select-mode
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # to commit version changes (changesets/action/version)
+      pull-requests: write # to open the version pull request (changesets/action/version)
+    steps:
+      - uses: actions/checkout@v7
         with:
-          version: pnpm version-packages
-          title: Version packages
-          commit: Version packages
+          persist-credentials: false
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - run: pnpm install --frozen-lockfile
+      - name: Open or update the version pull request
+        uses: changesets/action/version@v2
+        with:
+          script: pnpm version-packages
+          pr-title: Version packages
+          commit-message: Version packages
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }} # @changesets/changelog-github looks up PR links while versioning
 
+  # Trips is private and not on npm, so Changesets' publish step has nothing to do; the release is a GitHub release.
+  release:
+    if: needs.select-mode.outputs.mode != 'version'
+    needs: select-mode
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # to create the GitHub release
+      id-token: write # to sign the artifact attestation
+      attestations: write # to store the artifact attestation
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - name: Find an unreleased version
         id: version
-        if: steps.changesets.outputs.hasChangesets == 'false'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -53,9 +89,17 @@ jobs:
             echo "version=$version" >> "$GITHUB_OUTPUT"
           fi
 
+      - uses: pnpm/action-setup@v6
+        if: steps.version.outputs.release == 'true'
+      - uses: actions/setup-node@v7
+        if: steps.version.outputs.release == 'true'
+        with:
+          node-version: 24
+          package-manager-cache: false
       - name: Check and build
         if: steps.version.outputs.release == 'true'
         run: |
+          pnpm install --frozen-lockfile
           pnpm test
           pnpm lint
           pnpm check
