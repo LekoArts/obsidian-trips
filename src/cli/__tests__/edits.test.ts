@@ -179,6 +179,90 @@ it.each<{ title: string; flags: Record<string, string>; expected: Record<string,
     }, 0),
   },
   {
+    title: 'reorder: the first of three activities to position 2',
+    flags: {
+      'action': 'move',
+      'activity': 'Tram 28',
+      'from-day': '2026-09-11',
+      'entry': 'Alfama',
+      'day': '2026-09-11',
+      'position': '2',
+    },
+    expected: {
+      [ALFAMA]: alfama() + lines('Plan', '', '## 2026-09-11', '', '### Activities', '', '- [[Castelo]]', '- [[Tram 28]]', '- [[Miradouro]]', '', '## 2026-09-12', '', '### Activities', '', ''),
+    },
+    plan: (host: ItineraryDataHost, model: ItineraryModel, row: (path: string) => EntryRow) => movePlan(host, model, activity('Tram 28'), row(ALFAMA), '2026-09-11', {
+      row: row(ALFAMA),
+      date: '2026-09-11',
+    }, 1),
+  },
+  {
+    title: 'reorder: the first of three activities to position 3',
+    flags: {
+      'action': 'move',
+      'activity': 'Tram 28',
+      'from-day': '2026-09-11',
+      'entry': 'Alfama',
+      'day': '2026-09-11',
+      'position': '3',
+    },
+    expected: {
+      [ALFAMA]: alfama() + lines('Plan', '', '## 2026-09-11', '', '### Activities', '', '- [[Castelo]]', '- [[Miradouro]]', '- [[Tram 28]]', '', '## 2026-09-12', '', '### Activities', '', ''),
+    },
+    plan: (host: ItineraryDataHost, model: ItineraryModel, row: (path: string) => EntryRow) => movePlan(host, model, activity('Tram 28'), row(ALFAMA), '2026-09-11', {
+      row: row(ALFAMA),
+      date: '2026-09-11',
+    }, 2),
+  },
+  {
+    title: 'reorder without a position: the activity goes last',
+    flags: {
+      'action': 'move',
+      'activity': 'Tram 28',
+      'from-day': '2026-09-11',
+      'entry': 'Alfama',
+      'day': '2026-09-11',
+    },
+    expected: {
+      [ALFAMA]: alfama() + lines('Plan', '', '## 2026-09-11', '', '### Activities', '', '- [[Castelo]]', '- [[Miradouro]]', '- [[Tram 28]]', '', '## 2026-09-12', '', '### Activities', '', ''),
+    },
+    plan: (host: ItineraryDataHost, model: ItineraryModel, row: (path: string) => EntryRow) => movePlan(host, model, activity('Tram 28'), row(ALFAMA), '2026-09-11', {
+      row: row(ALFAMA),
+      date: '2026-09-11',
+    }),
+  },
+  {
+    title: 'reorder past the end: the activity goes last',
+    flags: {
+      'action': 'move',
+      'activity': 'Tram 28',
+      'from-day': '2026-09-11',
+      'entry': 'Alfama',
+      'day': '2026-09-11',
+      'position': '9',
+    },
+    expected: {
+      [ALFAMA]: alfama() + lines('Plan', '', '## 2026-09-11', '', '### Activities', '', '- [[Castelo]]', '- [[Miradouro]]', '- [[Tram 28]]', '', '## 2026-09-12', '', '### Activities', '', ''),
+    },
+    plan: (host: ItineraryDataHost, model: ItineraryModel, row: (path: string) => EntryRow) => movePlan(host, model, activity('Tram 28'), row(ALFAMA), '2026-09-11', {
+      row: row(ALFAMA),
+      date: '2026-09-11',
+    }, 8),
+  },
+  {
+    title: 'add to a stop, whose kind generates no day sections: the day section is added',
+    flags: {
+      action: 'add',
+      activity: 'Elevador',
+      entry: 'Sintra',
+      day: '2026-09-13',
+    },
+    expected: {
+      [SINTRA]: `---\n{"base":"[[_templates/Bases/Roadtrip.base]]","backlink":"[[Lisbon]]","startDate":"2026-09-13","endDate":"2026-09-13","Activities":["[[Elevador]]"]}\n---\n${lines('Stop', '', '## 2026-09-13', '', '### Activities', '', '- [[Elevador]]', '')}`,
+    },
+    plan: (host: ItineraryDataHost, model: ItineraryModel, row: (path: string) => EntryRow) => movePlan(host, model, activity('Elevador'), row(SINTRA), '2026-09-13'),
+  },
+  {
     title: 'remove from a day: it stays an activity of the entry',
     flags: {
       action: 'remove',
