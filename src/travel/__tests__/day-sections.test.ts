@@ -123,3 +123,8 @@ it('a heading that fits several formats is not guessed: it is counted towards th
     mixed: false,
   });
 });
+it('headings with day and month names are matched to their format, not skipped for their punctuation', () => {
+  expect(dayFormatMismatch(['Wednesday, 27 May 2026', 'Thursday, 28 May 2026'], 'YYYY-MM-DD')?.suggestion).toBe('dddd, D MMMM YYYY');
+  expect(dayFormatMismatch(['May 27, 2026'], 'YYYY-MM-DD')?.suggestion).toBe('MMMM D, YYYY');
+  expect(dayFormatMismatch(['27. May 2026'], 'YYYY-MM-DD')?.suggestion).toBe('D. MMMM YYYY');
+});

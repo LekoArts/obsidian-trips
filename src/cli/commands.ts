@@ -16,7 +16,7 @@ import { loadItinerary, tripPaths } from '../ui/itinerary/model';
 import { CliError } from './reply';
 import { fieldStrings } from './request';
 
-export interface CliIO extends CreationIO, BatchIO { paths: () => string[]; headings: (path: string, level: number) => string[] }
+export interface CliIO extends CreationIO, BatchIO { paths: () => string[] }
 /** What the commands need from the plugin. Getters, because saving settings or rebuilding the index replaces them. */
 export interface CliContext {
   io: CliIO;

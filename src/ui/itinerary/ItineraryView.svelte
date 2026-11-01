@@ -11,7 +11,6 @@
   import { undoPlan } from '../../editing/batch';
   import { dayOffset } from '../../travel/dates';
   import { rangeProblems } from '../creation/fields';
-  import { listSeparator } from '../day-format';
   import { icon } from '../icon';
   import { pick } from '../suggest';
   import { dayLabel, freeStretch, rangeLabel, shiftSpan, stepTarget, tripDays, tripLayout } from './layout';
@@ -898,12 +897,10 @@
     </header>
     {@render refusal('trip')}
 
-    {#if layout.attention.length || layout.formats.length}
+    {#if layout.attention.length}
       <section class='travel-attention' aria-labelledby='travel-attention'>
         <h3 id='travel-attention'>Needs attention</h3>
-        <ul>{#each layout.formats as problem (problem.kindId)}
-          <li><strong>{problem.kind}</strong> {problem.lead} {#each problem.notes as note, index (note.path)}<button class='travel-link-button' use:noteLink={note.path}>{note.name}</button>{listSeparator(index, problem.notes.length)}{/each}. {problem.fix}</li>
-        {/each}{#each layout.attention as item, index (`${item.path}:${index}`)}
+        <ul>{#each layout.attention as item, index (`${item.path}:${index}`)}
           {@const row = layout.entries.find(row => row.note.snapshot.path === item.path)}
           <li><button class='travel-link-button' use:noteLink={item.path}><strong>{item.name}</strong></button> {item.message}
             {#if row?.valid && model.trip.start && (row.note.end < model.trip.start || row.note.start > model.trip.end)}

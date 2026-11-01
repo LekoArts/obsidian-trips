@@ -1,6 +1,5 @@
 import { expect, it } from 'vitest';
 import { language } from '../../../__tests__/obsidian';
-import { formatFix, kindDayFormatMismatch } from '../../day-format';
 import { dayLabel, freeStretch, linkResolver, neighbourDay, rangeLabel, shiftSpan, tripDays } from '../layout';
 import { loadTrip } from './fixture';
 
@@ -28,68 +27,6 @@ it('rows are in date order with every day, its activities, and out-of-range link
   ]);
   expect(layout.unplanned.map(note => note.snapshot.path)).toEqual(['Travel/Idea.md']);
   expect(layout.attention).toEqual([]);
-});
-it('day headings in another date format are reported once per kind, so activities under them don\'t silently look unplanned', async () => {
-  const { layout, model } = await load({
-    Busan: ['2026-05-10', '2026-05-12', '## 10.05.2026\n### Activities\n- [[Park]]\n## 11.05.2026\n'],
-    Jeju: ['2026-05-13', '2026-05-14', '## 13.05.2026\n'],
-  });
-  expect(layout.formats).toEqual([
-    {
-      kindId: 'entry',
-      kind: model.entries[0]!.type.label,
-      lead: 'day headings like 10.05.2026 aren\u2019t read as days in',
-      notes: [
-        { name: 'Busan', path: 'Travel/Busan.md' },
-        { name: 'Jeju', path: 'Travel/Jeju.md' },
-      ],
-      fix: 'Switch the day-heading format to DD.MM.YYYY in Trips settings.',
-    },
-  ]);
-  expect(layout.attention).toEqual([]);
-  expect(layout.unplanned.map(note => note.snapshot.path)).toEqual(['Travel/Idea.md', 'Travel/Park.md']);
-});
-it('no switch is offered when another note of the kind already uses the configured format', async () => {
-  const { layout } = await load({
-    Busan: ['2026-05-10', '2026-05-12', '## 10.05.2026\n'],
-    Arrival: ['2026-05-01', '2026-05-02', '## 2026-05-01\n'],
-  });
-  expect(layout.formats.map(problem => [
-    problem.notes.map(note => note.name),
-    problem.fix,
-  ])).toEqual([
-    [
-      ['Busan'],
-      'They mix YYYY-MM-DD with DD.MM.YYYY; only YYYY-MM-DD is read.',
-    ],
-  ]);
-});
-it('the trip tab offers the switch settings offers, judged on the kind across trips, not just this one', async () => {
-  const { io, host, reload } = await load({
-    Busan: ['2026-05-10', '2026-05-12', '## 10.05.2026\n'],
-  });
-  expect((await reload()).layout.formats.map(problem => problem.fix)).toEqual(['Switch the day-heading format to DD.MM.YYYY in Trips settings.']);
-  io.files.set('Travel/Other/Other.md', io.note({ kind: 'trip', startDate: '2026-07-01', endDate: '2026-07-31' }));
-  io.files.set('Travel/Other/Lyon.md', io.note({
-    kind: 'entry',
-    backlink: '[[Travel/Other/Other.md]]',
-    startDate: '2026-07-02',
-    endDate: '2026-07-03',
-  }, '## 2026-07-02\n'));
-  const { layout } = await reload();
-  const entry = host.settings.profile.types.find(type => type.id === 'entry')!;
-  expect(layout.formats.map(problem => [
-    problem.lead,
-    problem.notes.map(note => note.name),
-    problem.fix,
-  ])).toEqual([
-    [
-      'day headings like 10.05.2026 aren\u2019t read as days in',
-      ['Busan'],
-      formatFix(kindDayFormatMismatch(entry, host.index, io.headings.bind(io))!, 'YYYY-MM-DD'),
-    ],
-  ]);
-  expect(layout.formats[0]!.fix).toBe('They mix YYYY-MM-DD with DD.MM.YYYY; only YYYY-MM-DD is read.');
 });
 it('broken and out-of-trip dates are reported', async () => {
   const { layout } = await load({

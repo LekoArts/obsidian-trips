@@ -163,26 +163,47 @@ const COMMON_DAY_FORMATS = [
  * headings being read.
  */
 export interface DayFormatMismatch { example: string; formats: string[][]; mixed: boolean; suggestion?: string }
+/** The punctuation and spaces of a date or format, which strict parsing requires to match exactly. */
+function separators(text: string) {
+  return [
+    ...new Set(text.replace(/[\p{L}\p{N}]/gu, '')),
+  ].sort().join('');
+}
+const COMMON_SHAPES = COMMON_DAY_FORMATS.map(separators);
+/** The common formats a heading fits; only ones with its punctuation are parsed, and none without a four-digit year. */
+function commonFits(text: string): string[] {
+  if (!/\d{4}/.test(text))
+    return [];
+  const shape = separators(text);
+  return COMMON_DAY_FORMATS.filter((candidate, index) => COMMON_SHAPES[index] === shape && filled(parseDate(text, candidate)));
+}
 export function dayFormatMismatch(texts: string[], format: string): DayFormatMismatch | undefined {
-  const reads = (candidate: string, text: string) => filled(parseDate(text, candidate));
-  const read = texts.filter(text => reads(format, text));
-  const dated = texts.filter(text => !reads(format, text)).map(text => ({
-    text,
-    fits: COMMON_DAY_FORMATS.filter(candidate => reads(candidate, text)),
-  })).filter(heading => heading.fits.length);
+  let read = 0;
+  const dated: { text: string; fits: string[] }[] = [];
+  for (const text of texts) {
+    const fits = commonFits(text);
+    // A heading the configured format reads is a day; one fitting no common format isn't a date at all. The common
+    // list covers the formats people use, so a custom configured format is still checked directly.
+    if (COMMON_DAY_FORMATS.includes(format)
+      ? fits.includes(format)
+      : filled(parseDate(text, format))) {
+      read++;
+    }
+    else if (fits.length) {
+      dated.push({ text, fits });
+    }
+  }
   const example = dated[0]?.text;
   if (!filled(example))
     return undefined;
   const formats: string[][] = [];
   let left = dated;
   while (left.length) {
-    const explained = (candidate: string) => left.filter(heading => heading.fits.includes(candidate));
-    const best = COMMON_DAY_FORMATS.reduce((top, candidate) => explained(candidate).length > explained(top).length
-      ? candidate
-      : top);
-    const group = explained(best);
+    const counts = COMMON_DAY_FORMATS.map(candidate => left.reduce((count, heading) => count + Number(heading.fits.includes(candidate)), 0));
+    const best = COMMON_DAY_FORMATS[counts.indexOf(Math.max(...counts))]!;
+    const group = left.filter(heading => heading.fits.includes(best));
     formats.push(COMMON_DAY_FORMATS.filter(candidate => group.every(heading => heading.fits.includes(candidate))));
-    left = left.filter(heading => !group.includes(heading));
+    left = left.filter(heading => !heading.fits.includes(best));
   }
   const only = formats.length === 1 && formats[0]!.length === 1
     ? formats[0]![0]
@@ -190,8 +211,8 @@ export function dayFormatMismatch(texts: string[], format: string): DayFormatMis
   return {
     example,
     formats,
-    mixed: read.length > 0,
-    ...(read.length === 0 && filled(only)
+    mixed: read > 0,
+    ...(read === 0 && filled(only)
       ? { suggestion: only }
       : {}),
   };

@@ -1,5 +1,4 @@
 import type { Occurrence } from '../../travel/assignments';
-import type { DayFormatMismatch } from '../../travel/day-sections';
 import type { Span } from '../../travel/schedule';
 import type { ItineraryModel, ItineraryNote } from './model';
 import { getLanguage } from 'obsidian';
@@ -7,9 +6,7 @@ import { noteName } from '../../config/paths';
 import { filled } from '../../config/validation';
 import { linkTarget, resolveTargets } from '../../discovery';
 import { addDays, inclusiveDays } from '../../travel/dates';
-import { dayFormatMismatch } from '../../travel/day-sections';
 import { validSpan } from '../../travel/schedule';
-import { formatFix } from '../day-format';
 
 /** Every note a link could mean: the one beside the linking note if there is one, else every match in the vault. */
 export function linkMatches(paths: string[], from: string, link: string): string[] {
@@ -39,46 +36,7 @@ export interface EntryRow {
   outside: (DayActivity & { date: string })[];
   warnings: string[];
 }
-/**
- * Notes of one kind whose day headings are in another date format, reported once for the kind since one setting fixes
- * them all. `lead` and `fix` go before and after the linked note names.
- */
-export interface FormatProblem { kindId: string; kind: string; lead: string; notes: { name: string; path: string }[]; fix: string }
-export interface TripLayout { entries: EntryRow[]; unplanned: ItineraryNote[]; attention: { name: string; path: string; message: string }[]; formats: FormatProblem[] }
-
-function formatProblems(notes: ItineraryNote[], verdicts: Record<string, DayFormatMismatch>): FormatProblem[] {
-  const groups = new Map<string, { note: ItineraryNote; example: string }[]>();
-  for (const note of notes) {
-    const own = dayFormatMismatch(note.dayHeadings, note.type.days.dateFormat);
-    if (own) {
-      groups.set(note.type.id, [
-        ...groups.get(note.type.id) ?? [],
-        { note, example: own.example },
-      ]);
-    }
-  }
-  // The fix comes from the kind's verdict across the vault, so it matches settings; the example from this trip.
-  return [
-    ...groups.values(),
-  ].flatMap((group) => {
-    const type = group[0]!.note.type;
-    const mismatch = verdicts[type.id];
-    return mismatch
-      ? [
-          {
-            kindId: type.id,
-            kind: type.label,
-            lead: `day headings like ${group[0]!.example} aren’t read as days in`,
-            notes: group.map(({ note }) => ({
-              name: noteName(note.snapshot.path),
-              path: note.snapshot.path,
-            })),
-            fix: formatFix(mismatch, type.days.dateFormat),
-          },
-        ]
-      : [];
-  });
-}
+export interface TripLayout { entries: EntryRow[]; unplanned: ItineraryNote[]; attention: { name: string; path: string; message: string }[] }
 
 /** Day and month names in Obsidian's language. */
 function dates(options: Intl.DateTimeFormatOptions): Intl.DateTimeFormat {
@@ -198,7 +156,6 @@ export function tripLayout(model: ItineraryModel, paths: string[]): TripLayout {
     entries,
     unplanned: model.activities.filter(note => !planned.has(note.snapshot.path)),
     attention,
-    formats: formatProblems(sorted, model.dayFormats),
   };
 }
 /** Tones cycle in start order, so consecutive and overlapping entries never share one. */

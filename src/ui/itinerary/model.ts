@@ -3,7 +3,6 @@ import type { YamlCodec } from '../../config/template-render';
 import type { BatchIO } from '../../editing/batch';
 import type { FileSnapshot } from '../../editing/conflicts';
 import type { Occurrence } from '../../travel/assignments';
-import type { DayFormatMismatch } from '../../travel/day-sections';
 import type { NoteType, PlannerSettings, RecognizedNote } from '../../types';
 import type { CreationOptions } from '../creation/modal';
 import { tripContents } from '../../config/profile';
@@ -11,12 +10,11 @@ import { parseProperties, splitNote } from '../../config/template-render';
 import { filled } from '../../config/validation';
 import { capture } from '../../editing/conflicts';
 import { dailyOccurrences } from '../../travel/assignments';
-import { kindDayFormatMismatch } from '../day-format';
 
 export interface ItineraryDataHost {
   settings: PlannerSettings;
   index: RecognizedNote[];
-  io: BatchIO & { paths: () => string[]; codec: YamlCodec; headings: (path: string, level: number) => string[] };
+  io: BatchIO & { paths: () => string[]; codec: YamlCodec };
 }
 export interface ItineraryHost extends ItineraryDataHost { app: App; subscribe: (listener: (notes: RecognizedNote[]) => void) => () => void; openCreation: (options: CreationOptions) => void }
 /** What a trip tab remembers across restarts: UI state only, never trip data. */
@@ -30,8 +28,6 @@ export interface ItineraryNote {
   parentPath?: string;
   diagnostics: string[];
   daily: Occurrence[];
-  /** Headings at the day-heading level, from the same source as the kind-wide `dayFormats` verdict so both agree. */
-  dayHeadings: string[];
 }
 export interface ItineraryModel {
   profile: string;
@@ -45,8 +41,6 @@ export interface ItineraryModel {
   creatable: string[];
   /** The kind + Activity creates: one whose Base the trip embeds, else the kind of its existing activities, else one without a Base. */
   activityKind?: NoteType;
-  /** Per entry kind id, its day headings in another date format across the vault, the same verdict settings shows. */
-  dayFormats: Record<string, DayFormatMismatch>;
 }
 export function tripPaths(host: ItineraryDataHost): string[] {
   return host.index.filter(note => host.settings.profile.types.find(type => type.id === note.typeId)?.role === 'trip' && !note.diagnostics.some(d => d.capability === 'recognition')).map(note => note.path);
@@ -81,9 +75,6 @@ export async function loadItinerary(host: ItineraryDataHost, path: string): Prom
         : '',
       diagnostics,
       daily,
-      dayHeadings: type.role === 'entry'
-        ? host.io.headings(note.path, type.days.headingLevel)
-        : [],
     };
   }
   const recognized = host.index.find(note => note.path === path);
@@ -134,14 +125,5 @@ export async function loadItinerary(host: ItineraryDataHost, path: string): Prom
     kinds: structuredClone(kinds),
     creatable,
     activityKind: activityKind && structuredClone(activityKind),
-    // Only the kinds this trip has, as each verdict scans every note of its kind in the vault.
-    dayFormats: Object.fromEntries(host.settings.profile.types.filter(type => entries.some(entry => entry.type.id === type.id)).flatMap((type) => {
-      const mismatch = kindDayFormatMismatch(type, host.index, host.io.headings.bind(host.io));
-      return mismatch
-        ? [
-            [type.id, mismatch],
-          ]
-        : [];
-    })),
   };
 }
