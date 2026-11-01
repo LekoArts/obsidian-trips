@@ -13,7 +13,7 @@ Your notes stay ordinary Markdown. They work the same when the plugin is turned 
 - **Trip**: one note for the whole trip, with a start and an end date.
 - **Day plan** and **stop**: notes for part of a trip, such as three nights in one city. Each has its own dates inside the trip.
 - **Activity**: a note for something to do, such as a museum. You can put it on one or more days.
-- **Kind**: a type of note, with its own template and folder. The travel setup has the kinds Simple, Advanced and Roadtrip for trips, and Planning, Stop and Activity for notes inside a trip.
+- **Kind**: a type of note, with its own template, folder and form fields. You can use the kinds from the travel setup, change them or add your own. See [Change the kinds](#change-the-kinds).
 
 ## Use it
 
@@ -23,16 +23,45 @@ All actions are commands. Open the command palette with Cmd+P (macOS) or Ctrl+P 
 
 1. Open **Settings → Trips**.
 2. Choose one way to start:
-   - **Use the travel setup** adds ready-made templates and Bases. You see the list of files first. Files already in your vault are never changed.
-   - **Use my own templates** uses a note you pick as the trip template, or creates a starter one. Put `{{start_date}}` and `{{end_date}}` in the properties that hold the dates, for example `startDate: "{{start_date}}"`.
+   - **Use the travel setup** to start with ready-made kinds. Trips adds their templates to `_templates/` and their Bases to `_templates/Bases/`. You see the list of files first. Files already in your vault are never changed.
+   - **Use my own templates** to start with one trip kind based on a note you pick, or on a starter note that Trips creates. Put `{{start_date}}` and `{{end_date}}` in the properties that hold the dates, for example `startDate: "{{start_date}}"`.
 3. Optional: under **Travel folder**, choose where trips are saved. Trips also looks for existing trips there.
 
-You can edit your templates like any note. Keep their properties and `{{…}}` placeholders, because Trips uses them to recognise and fill in notes.
+The travel setup has these kinds:
+
+| Kind | What it is |
+| --- | --- |
+| Simple | A trip in a single note |
+| Advanced | A trip that holds day plans (Planning) and activities (Activity) |
+| Roadtrip | A trip that holds a stop (Stop) for each place you stay |
+| Planning | Part of a trip, such as three nights in Busan, with a section for each day and its activities |
+| Stop | One place on a road trip, with its dates |
+| Activity | Something to do, which you can put on a day of a day plan |
+
+Whichever way you start, you can change every kind later.
+
+### Change the kinds
+
+Open **Settings → Trips**. Your kinds are listed under **Trip kinds** and **Inside a trip**. Select a kind to change it, or use **Add trip kind** and **Add note kind** to add one.
+
+For each kind you can set:
+
+- **Name**: how it appears in menus and buttons.
+- **Template**: the note that new notes of this kind copy.
+- **Save new notes to**: the path, built from `{{trip_name}}`, `{{entry_name}}` and `{{trip_start_year}}`, for example `Travel/{{trip_start_year}}/{{trip_name}}.md`.
+- **Contains** (trip kinds only): which kinds you can add to the trip.
+- **One section per day**: whether new notes get a heading for each date, and its format under **Day-heading format**.
+- **Form fields**: the fields you fill in when you create a note. Use **Add a field** for more.
+- **Recognition and property names**: how Trips tells the kinds apart and which properties hold the dates and links.
+
+Template, path, field and day-section changes apply to notes you create afterwards; existing notes aren't rewritten. Renaming a property doesn't rename it in existing notes.
+
+You can also edit your templates like any note. Change headings, callouts and text freely. Keep their properties and `{{…}}` placeholders, because Trips uses them to recognise and fill in notes.
 
 ### Create a trip
 
 1. Run **Trips: Create trip…**.
-2. If you have more than one trip kind, choose one. Simple trips are a single note. Advanced trips can hold day plans and activities. Road trips hold stops.
+2. If you have more than one trip kind, choose one.
 3. Enter a name, a start date and an end date. The end date can't be before the start date.
 4. Fill in any other fields from your template and select **Create**.
 
