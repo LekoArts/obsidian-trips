@@ -28,7 +28,7 @@
     "@changesets/changelog-github": "1.0.1",
     "@changesets/cli": "3.0.3",
     "@eslint/js": "10.0.1",
-    "@types/node": "22.20.5",
+    "@types/node": "^24.19.2",
     "esbuild": "0.28.2",
     "esbuild-svelte": "0.9.5",
     "eslint": "10.14.0",
@@ -45,6 +45,6 @@
     "svelte-preprocess": "6.0.5",
     "typescript": "6.0.3",
     "typescript-eslint": "8.72.1",
-    "vitest": "4.1.12"
+    "vitest": "^5.0.5"
   }
 }
