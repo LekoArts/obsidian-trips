@@ -42,7 +42,7 @@ No flags. Each kind:
 - `role`: `trip`, `entry` (day plan or stop) or `activity`.
 - `contains` (trip kinds only): kinds that can belong to a trip of this kind.
 - `dated`: the kind needs `start` and `end`.
-- `daySections`: activities can be put on this entry's days.
+- `daySections`: `trips:create` writes a section for each day of a new note of this kind, and accepts a `day` on its `activities`. It doesn't limit `trips:assign`, which adds a missing day section to any day plan or stop.
 - `type`: `text`, `number`, `boolean`, `date`, `url`, `text-list`, `note-link`, `note-link-list`.
 - `templateMissing: true` when the kind's template can't be read; tell the user.
 

@@ -28,7 +28,7 @@ If the output isn't JSON (for example `Command "trips:list" not found`), the Tri
 
 Workflow: `trips:status` → `trips:kinds` → `trips:list` → `trips:create` → read the reply.
 
-1. `trips:kinds` lists every kind with its `id`, `role` (`trip`, `entry` or `activity`), whether it needs dates (`dated`), whether activities can go on its days (`daySections`), and its `fields` (key, type, default). A trip kind's `contains` lists the kinds that can belong to it — pick a trip kind that contains what the user wants (for example a trip with day plans and activities).
+1. `trips:kinds` lists every kind with its `id`, `role` (`trip`, `entry` or `activity`), whether it needs dates (`dated`), whether day sections are written when a note of that kind is created (`daySections`), and its `fields` (key, type, default). A trip kind's `contains` lists the kinds that can belong to it — pick a trip kind that contains what the user wants (for example a trip with day plans and activities).
 2. `trips:list` shows existing trips. Check the trip doesn't already exist before creating it, and use names or paths exactly as shown there.
 3. Create one note per call, parent first: the trip, then activities, then entries that list those activities.
 
@@ -48,7 +48,7 @@ Workflow: `trips:list` → `trips:assign` or `trips:reschedule` → `trips:list`
 
 There is no Undo from the CLI, so read `trips:list` first to see where things are, change one thing at a time, and read `trips:list` again to confirm the result before telling the user it's done.
 
-- **Put an activity on a day:** `trips:assign action=add trip=… activity=… entry=… day=YYYY-MM-DD [position=N]`. The activity note must already exist in the trip (create it first), the day must be within the entry and the trip, and the entry's kind must have `daySections: true`.
+- **Put an activity on a day:** `trips:assign action=add trip=… activity=… entry=… day=YYYY-MM-DD [position=N]`. The activity note must already exist in the trip (create it first), and the day must be within the entry and the trip. This works for any day plan or stop: if the entry has no section for that day yet, `trips:assign` adds one, even when its kind has `daySections: false`.
 - **Move it** to another day, in the same or another entry: `action=move … from-day=YYYY-MM-DD [from-entry=…] entry=… day=…`. `from-entry` defaults to `entry`. Moving within the same day with a `position` reorders it.
 - **Take it off:** `action=remove … entry=… day=…` takes it off that day only; without `day` it removes the activity from the entry altogether. The activity note itself always stays.
 - **Reschedule an entry:** `trips:reschedule trip=… entry=… start=… end=…`. If the new dates fall outside the trip you get `OUTSIDE_TRIP`; ask the user before retrying with the bare `extend` flag (which grows the trip too), unless they already asked to grow the trip. The reply's `summary` says when activities are left on days outside the new dates — tell the user.
