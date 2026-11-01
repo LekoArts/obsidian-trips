@@ -20,6 +20,8 @@ Every command prints one JSON object. The CLI's exit code is always 0, even on f
 - `{"ok": true, "data": {…}}` — it worked.
 - `{"ok": false, "error": {"code": "…", "message": "…"}}` — nothing was written unless `error.report.completed` lists files. The message says what to do next.
 
+Run each `trips:*` command as its own shell command and read its whole reply. Don't chain it with `;`/`&&` or pipe it into other programs (`python3`, `grep`, …): if part of a combined command is refused or fails, the write may not run at all, or its reply may be lost. The replies are small enough to read as they are.
+
 If the output isn't JSON (for example `Command "trips:list" not found`), the Trips plugin is missing, disabled or too old; tell the user.
 
 ## Creating notes
