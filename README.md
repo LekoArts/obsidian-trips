@@ -133,7 +133,13 @@ Every command answers in JSON. The CLI always exits with 0, so check the `ok` fi
 
 Editing properties, attaching and detaching notes, deleting, Undo and fixing notes that need attention stay in Obsidian.
 
-To let an AI agent plan trips this way, copy the [`skills/trips`](skills/trips) folder into the agent's skills folder, for example `.claude/skills/trips`.
+To let an AI agent plan trips this way, install the [`trips` skill](skills/trips) with [skills](https://github.com/vercel-labs/skills):
+
+```sh
+npx skills add LekoArts/obsidian-trips --skill trips
+```
+
+It asks which agents to install it for. Add `-g` to install it for all your projects instead of the current one. You can also copy the [`skills/trips`](skills/trips) folder into the agent's skills folder by hand, for example `.claude/skills/trips`.
 
 ## Requirements
 
