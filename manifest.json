@@ -1,7 +1,7 @@
 {
   "id": "trips",
   "name": "Trips",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "minAppVersion": "1.13.1",
   "description": "Travel planner for your vault. Create trips, day plans, stops and activities from templates, with dates and links filled in. Rearrange your itinerary by day in a trip tab.",
   "author": "LekoArts",
