@@ -3,6 +3,7 @@ import type { YamlCodec } from '../../config/template-render';
 import type { BatchIO } from '../../editing/batch';
 import type { FileSnapshot } from '../../editing/conflicts';
 import type { Occurrence } from '../../travel/assignments';
+import type { DayFormatMismatch } from '../../travel/day-sections';
 import type { NoteType, PlannerSettings, RecognizedNote } from '../../types';
 import type { CreationOptions } from '../creation/modal';
 import { tripContents } from '../../config/profile';
@@ -10,6 +11,14 @@ import { parseProperties, splitNote } from '../../config/template-render';
 import { filled } from '../../config/validation';
 import { capture } from '../../editing/conflicts';
 import { dailyOccurrences } from '../../travel/assignments';
+import { bodyDayFormatMismatch } from '../../travel/day-sections';
+
+function dayFormatProblem(mismatch: DayFormatMismatch, type: NoteType): string {
+  const fix = filled(mismatch.suggestion)
+    ? `set the ${type.label} day-heading format to ${mismatch.suggestion}`
+    : `change the ${type.label} day-heading format (${type.days.dateFormat}) to match`;
+  return `Day headings like ${mismatch.example} aren’t read as days: ${fix} in Trips settings.`;
+}
 
 export interface ItineraryDataHost {
   settings: PlannerSettings;
@@ -60,6 +69,11 @@ export async function loadItinerary(host: ItineraryDataHost, path: string): Prom
     let daily: Occurrence[] = [];
     try {
       daily = dailyOccurrences(parts.body, type.days);
+      const mismatch = type.role === 'entry'
+        ? bodyDayFormatMismatch(parts.body, type.days)
+        : undefined;
+      if (mismatch)
+        diagnostics.push(dayFormatProblem(mismatch, type));
     }
     catch (error) { diagnostics.push(String(error)); }
     return {

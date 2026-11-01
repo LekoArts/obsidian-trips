@@ -28,6 +28,21 @@ it('rows are in date order with every day, its activities, and out-of-range link
   expect(layout.unplanned.map(note => note.snapshot.path)).toEqual(['Travel/Idea.md']);
   expect(layout.attention).toEqual([]);
 });
+it('day headings in another date format are reported, so activities under them don\'t silently look unplanned', async () => {
+  const { layout, model } = await load({
+    Busan: ['2026-05-10', '2026-05-12', '## 10.05.2026\n### Activities\n- [[Park]]\n## 11.05.2026\n'],
+    Arrival: ['2026-05-01', '2026-05-02', '## 2026-05-01\n### Activities\n- [[Idea]]\n'],
+  });
+  const label = model.entries[0]!.type.label;
+  expect(layout.attention).toEqual([
+    {
+      name: 'Busan',
+      path: 'Travel/Busan.md',
+      message: `Day headings like 10.05.2026 aren’t read as days: set the ${label} day-heading format to DD.MM.YYYY in Trips settings.`,
+    },
+  ]);
+  expect(layout.unplanned.map(note => note.snapshot.path)).toEqual(['Travel/Park.md']);
+});
 it('broken and out-of-trip dates are reported', async () => {
   const { layout } = await load({
     A: ['2026-05-10', '2026-05-12'],

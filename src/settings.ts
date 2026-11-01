@@ -2,7 +2,8 @@ import type { App, ExtraButtonComponent, Plugin, SettingDefinition, SettingDefin
 import type { InstallPreview } from './config/preset-install';
 import type { SharedKey } from './config/shared-properties';
 import type { ObsidianVault } from './io/vault';
-import type { FieldDefinition, NoteType, PlannerSettings, Profile } from './types';
+import type { DayFormatMismatch } from './travel/day-sections';
+import type { FieldDefinition, NoteType, PlannerSettings, Profile, RecognizedNote } from './types';
 import { Modal, moment, normalizePath, PluginSettingTab } from 'obsidian';
 import { mount, unmount } from 'svelte';
 import { dateProperties, starterTemplate, suggestFields } from './config/field-suggestions';
@@ -15,6 +16,7 @@ import { filled } from './config/validation';
 import { resolveTargets } from './discovery';
 import { notify } from './notice';
 import { formatDate } from './travel/dates';
+import { dayFormatMismatch } from './travel/day-sections';
 import { confirmAction } from './ui/confirm';
 import { labelDialog } from './ui/dialog';
 import { editField } from './ui/field-modal';
@@ -23,6 +25,7 @@ import { pick } from './ui/suggest';
 
 export interface SettingsHost extends Plugin {
   settings: PlannerSettings;
+  index: RecognizedNote[];
   io: ObsidianVault;
   saveProfile: (profile: Profile) => Promise<void>;
 }
@@ -155,14 +158,18 @@ function defaultText(field: FieldDefinition): string {
  * change is checked against the whole setup (templates and Bases included) before it is saved; a change that would
  * make the setup invalid is refused inline and the last valid setup stays active.
  */
-/** Like core Daily notes: a link to the format reference and today's date in the current format. */
-function dayFormatHelp(format: string): DocumentFragment {
+/** Like core Daily notes: a link to the format reference and today's heading in the current format. */
+function dayFormatHelp(type: NoteType, mismatch: DayFormatMismatch | undefined): DocumentFragment {
   return createFragment((el) => {
     el.appendText('Also used to find daily activities in existing notes. ');
     el.createEl('a', { text: 'Format reference', href: 'https://momentjs.com/docs/#/displaying/format/' });
     el.createEl('br');
     // Obsidian types `moment` as a namespace, which TypeScript 6 won't call; `utc()` then `local()` is today.
-    el.appendText(`Today's heading: ${formatDate(moment.utc().local().format('YYYY-MM-DD'), format)}`);
+    el.appendText(`Today's day heading would be: ${'#'.repeat(type.days.headingLevel)} ${formatDate(moment.utc().local().format('YYYY-MM-DD'), type.days.dateFormat)}`);
+    if (mismatch) {
+      el.createEl('br');
+      el.createSpan({ cls: 'mod-warning', text: `${type.label} notes have headings like ${mismatch.example}, which this format doesn’t read as days.` });
+    }
   });
 }
 
@@ -751,16 +758,27 @@ export class TravelSettingsTab extends PluginSettingTab {
 
   private dayHeadings(type: NoteType, index: number): SettingDefinition[] {
     const entry = type.role === 'entry';
+    const mismatch = entry
+      ? dayFormatMismatch(this.host.index.filter(note => note.typeId === type.id).flatMap(note => this.host.io.headings(note.path, type.days.headingLevel)), type.days.dateFormat)
+      : undefined;
+    const suggestion = mismatch?.suggestion;
     return [
       {
         name: 'Day-heading format',
-        desc: dayFormatHelp(type.days.dateFormat),
+        desc: dayFormatHelp(type, mismatch),
         visible: entry,
         control: {
           type: 'text',
           placeholder: 'YYYY-MM-DD',
           ...this.bindKind<string>(index, 'dateFormat', kind => kind.days.dateFormat, (kind, value) => { kind.days.dateFormat = value; }),
         },
+      },
+      {
+        name: `Use ${suggestion ?? ''}`,
+        desc: 'The format those headings use. Changes this setting only; your notes stay as they are.',
+        visible: filled(suggestion),
+        searchable: false,
+        action: () => void this.setControlValue(`kind.${index}.dateFormat`, suggestion),
       },
       {
         name: 'Day-heading level',

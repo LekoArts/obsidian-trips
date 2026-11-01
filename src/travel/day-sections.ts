@@ -134,6 +134,50 @@ export function daySections(body: string, config: DaySections): DaySection[] {
   }
   return days;
 }
+/** Ways people commonly write a date in a heading, tried when headings don't match the configured format. */
+const COMMON_DAY_FORMATS = [
+  'YYYY-MM-DD',
+  'DD.MM.YYYY',
+  'D.M.YYYY',
+  'D. MMMM YYYY',
+  'DD/MM/YYYY',
+  'D/M/YYYY',
+  'MM/DD/YYYY',
+  'M/D/YYYY',
+  'DD-MM-YYYY',
+  'YYYY/MM/DD',
+  'YYYY.MM.DD',
+  'D MMMM YYYY',
+  'MMMM D, YYYY',
+  'dddd, D MMMM YYYY',
+  'dddd, MMMM D, YYYY',
+  'ddd, D MMM YYYY',
+  'ddd, MMM D, YYYY',
+];
+export interface DayFormatMismatch { example: string; suggestion?: string }
+/**
+ * Headings that look like dates but aren't in `format`, so they silently aren't days. Strict parsing tells
+ * `10.05.2026` (DD.MM.YYYY) from `10.5.2026` (D.M.YYYY). The suggestion is offered only when exactly one format fits
+ * every such heading and no heading already uses `format`, so switching to it never stops other headings being read.
+ */
+export function dayFormatMismatch(texts: string[], format: string): DayFormatMismatch | undefined {
+  const reads = (candidate: string) => (text: string) => filled(parseDate(text, candidate));
+  const read = texts.filter(reads(format));
+  const dated = texts.filter(text => !read.includes(text) && COMMON_DAY_FORMATS.some(candidate => reads(candidate)(text)));
+  const example = dated[0];
+  if (!filled(example))
+    return undefined;
+  const fits = read.length
+    ? []
+    : COMMON_DAY_FORMATS.filter(candidate => candidate !== format && dated.every(reads(candidate)));
+  return fits.length === 1
+    ? { example, suggestion: fits[0] }
+    : { example };
+}
+/** The day-level headings of a body that look like dates in another format; throws like `headings`. */
+export function bodyDayFormatMismatch(body: string, config: DaySections): DayFormatMismatch | undefined {
+  return dayFormatMismatch(headings(body).filter(heading => heading.level === config.headingLevel).map(heading => heading.text), config.dateFormat);
+}
 function separator(before: string, newline: string): string {
   return before.endsWith(newline + newline)
     ? ''

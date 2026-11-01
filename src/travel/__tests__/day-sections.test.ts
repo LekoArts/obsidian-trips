@@ -1,6 +1,6 @@
 import type { DaySections } from '../../types';
 import { expect, it } from 'vitest';
-import { generateDays } from '../day-sections';
+import { bodyDayFormatMismatch, dayFormatMismatch, generateDays } from '../day-sections';
 
 const config: DaySections = {
   enabled: true,
@@ -60,4 +60,16 @@ it('day headings can use any readable Moment format, and are recognised in it ag
   const once = generateDays('', '2026-05-27', '2026-05-28', named);
   expect(once).toBe('## Wednesday, 27 May 2026\n\n### Activities\n\n## Thursday, 28 May 2026\n\n### Activities\n\n');
   expect(generateDays(once, '2026-05-27', '2026-05-28', named)).toBe(once);
+});
+it('headings written in another date format are reported with the one format they all use', () => {
+  const body = '## 10.05.2026\n- KTX\n### Activities\n- [[Busan - Fotos]]\n## 11.05.2026\n## Notes\n### 12.05.2026\n```\n## 13/05/2026\n```\n';
+  expect(bodyDayFormatMismatch(body, config)).toEqual({ example: '10.05.2026', suggestion: 'DD.MM.YYYY' });
+  expect(bodyDayFormatMismatch(body, { ...config, dateFormat: 'DD.MM.YYYY' })).toBeUndefined();
+  expect(bodyDayFormatMismatch('## Notes\n## Day 1\n## 2026\n', config)).toBeUndefined();
+});
+it('a format is suggested only when it is the only fit and no heading already uses the configured one', () => {
+  expect(dayFormatMismatch(['05/06/2026'], 'YYYY-MM-DD')).toEqual({ example: '05/06/2026' });
+  expect(dayFormatMismatch(['05/06/2026', '25/06/2026'], 'YYYY-MM-DD')).toEqual({ example: '05/06/2026', suggestion: 'DD/MM/YYYY' });
+  expect(dayFormatMismatch(['2026-05-10', '11.05.2026'], 'YYYY-MM-DD')).toEqual({ example: '11.05.2026' });
+  expect(dayFormatMismatch(['10.5.2026'], 'YYYY-MM-DD')).toEqual({ example: '10.5.2026', suggestion: 'D.M.YYYY' });
 });
