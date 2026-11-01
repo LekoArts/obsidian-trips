@@ -2,7 +2,7 @@ import type { App, ExtraButtonComponent, Plugin, SettingDefinition, SettingDefin
 import type { InstallPreview } from './config/preset-install';
 import type { SharedKey } from './config/shared-properties';
 import type { ObsidianVault } from './io/vault';
-import type { FieldDefinition, NoteType, PlannerSettings, Profile } from './types';
+import type { FieldDefinition, NoteType, PlannerSettings, Profile, RecognizedNote } from './types';
 import { Modal, moment, normalizePath, PluginSettingTab } from 'obsidian';
 import { mount, unmount } from 'svelte';
 import { dateProperties, starterTemplate, suggestFields } from './config/field-suggestions';
@@ -16,6 +16,7 @@ import { resolveTargets } from './discovery';
 import { notify } from './notice';
 import { formatDate } from './travel/dates';
 import { confirmAction } from './ui/confirm';
+import { dayFormatOffers } from './ui/day-format';
 import { labelDialog } from './ui/dialog';
 import { editField } from './ui/field-modal';
 import InstallPreviewComponent from './ui/InstallPreview.svelte';
@@ -23,6 +24,7 @@ import { pick } from './ui/suggest';
 
 export interface SettingsHost extends Plugin {
   settings: PlannerSettings;
+  index: RecognizedNote[];
   io: ObsidianVault;
   saveProfile: (profile: Profile) => Promise<void>;
 }
@@ -155,14 +157,14 @@ function defaultText(field: FieldDefinition): string {
  * change is checked against the whole setup (templates and Bases included) before it is saved; a change that would
  * make the setup invalid is refused inline and the last valid setup stays active.
  */
-/** Like core Daily notes: a link to the format reference and today's date in the current format. */
-function dayFormatHelp(format: string): DocumentFragment {
+/** Like core Daily notes: a link to the format reference and today's heading in the current format. */
+function dayFormatHelp(format: string, level: number): DocumentFragment {
   return createFragment((el) => {
     el.appendText('Also used to find daily activities in existing notes. ');
     el.createEl('a', { text: 'Format reference', href: 'https://momentjs.com/docs/#/displaying/format/' });
     el.createEl('br');
     // Obsidian types `moment` as a namespace, which TypeScript 6 won't call; `utc()` then `local()` is today.
-    el.appendText(`Today's heading: ${formatDate(moment.utc().local().format('YYYY-MM-DD'), format)}`);
+    el.appendText(`Today's day heading would be: ${'#'.repeat(level)} ${formatDate(moment.utc().local().format('YYYY-MM-DD'), format)}`);
   });
 }
 
@@ -754,7 +756,7 @@ export class TravelSettingsTab extends PluginSettingTab {
     return [
       {
         name: 'Day-heading format',
-        desc: dayFormatHelp(type.days.dateFormat),
+        desc: dayFormatHelp(type.days.dateFormat, type.days.headingLevel),
         visible: entry,
         control: {
           type: 'text',
@@ -916,10 +918,32 @@ export class TravelSettingsTab extends PluginSettingTab {
         this.modal = new PresetModal(this.app, this.host, preview, resolve);
         this.modal.open();
       });
-      if (profile)
-        await this.commit((draft) => { Object.assign(draft, profile); });
+      if (profile) {
+        await this.commit((draft) => {
+          Object.assign(draft, profile);
+        });
+        await this.offerDayFormats();
+      }
     }
-    catch (error) { notify(String(error).replace(/^Error:\s*/, '')); }
+    catch (error) {
+      notify(String(error).replace(/^Error:\s*/, ''));
+    }
+  }
+
+  /** Once, after installing: existing notes may write day headings in another format than the setup's. */
+  private async offerDayFormats(): Promise<void> {
+    for (const offer of dayFormatOffers(this.profile.types, this.host.index, (path, level) => this.host.io.headings(path, level))) {
+      const { suggestion } = offer;
+      if (!filled(suggestion)) {
+        // Stays until dismissed: there is nothing to click, so it must not vanish before it is read.
+        notify(offer.message, 0);
+        continue;
+      }
+      if (await confirmAction(this.app, 'Day-heading format', [offer.message], `Use ${suggestion}`, false)) {
+        const index = this.profile.types.findIndex(type => type.id === offer.type.id);
+        await this.setControlValue(`kind.${index}.dateFormat`, suggestion);
+      }
+    }
   }
 
   /** Asks for the trip template, creating the starter one if chosen; returns its path and properties. */

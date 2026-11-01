@@ -134,6 +134,89 @@ export function daySections(body: string, config: DaySections): DaySection[] {
   }
   return days;
 }
+/** Ways people commonly write a date in a heading, tried when headings don't match the configured format. */
+const COMMON_DAY_FORMATS = [
+  'YYYY-MM-DD',
+  'DD.MM.YYYY',
+  'D.M.YYYY',
+  'D. MMMM YYYY',
+  'DD/MM/YYYY',
+  'D/M/YYYY',
+  'MM/DD/YYYY',
+  'M/D/YYYY',
+  'DD-MM-YYYY',
+  'YYYY/MM/DD',
+  'YYYY.MM.DD',
+  'D MMMM YYYY',
+  'MMMM D, YYYY',
+  'dddd, D MMMM YYYY',
+  'dddd, MMMM D, YYYY',
+  'ddd, D MMM YYYY',
+  'ddd, MMM D, YYYY',
+];
+/**
+ * Day headings that look like dates but aren't in the configured format, so they silently aren't days.
+ * `formats`: the fewest groups of formats that explain those headings, most headings first. Each group lists every
+ * format that explains its headings equally, so nothing is guessed: 05/06/2026 alone is [DD/MM/YYYY, MM/DD/YYYY],
+ * while next to 11/25/2026 it is [MM/DD/YYYY]. `mixed`: some headings do use the configured format. `suggestion`: the
+ * single format explaining them all, only when no heading uses the configured format, so switching never stops other
+ * headings being read.
+ */
+export interface DayFormatMismatch { example: string; formats: string[][]; mixed: boolean; suggestion?: string }
+/** The punctuation and spaces of a date or format, which strict parsing requires to match exactly. */
+function separators(text: string) {
+  return [
+    ...new Set(text.replace(/[\p{L}\p{N}]/gu, '')),
+  ].sort().join('');
+}
+const COMMON_SHAPES = COMMON_DAY_FORMATS.map(separators);
+/** The common formats a heading fits; only ones with its punctuation are parsed, and none without a four-digit year. */
+function commonFits(text: string): string[] {
+  if (!/\d{4}/.test(text))
+    return [];
+  const shape = separators(text);
+  return COMMON_DAY_FORMATS.filter((candidate, index) => COMMON_SHAPES[index] === shape && filled(parseDate(text, candidate)));
+}
+export function dayFormatMismatch(texts: string[], format: string): DayFormatMismatch | undefined {
+  let read = 0;
+  const dated: { text: string; fits: string[] }[] = [];
+  for (const text of texts) {
+    const fits = commonFits(text);
+    // A heading the configured format reads is a day; one fitting no common format isn't a date at all. The common
+    // list covers the formats people use, so a custom configured format is still checked directly.
+    if (COMMON_DAY_FORMATS.includes(format)
+      ? fits.includes(format)
+      : filled(parseDate(text, format))) {
+      read++;
+    }
+    else if (fits.length) {
+      dated.push({ text, fits });
+    }
+  }
+  const example = dated[0]?.text;
+  if (!filled(example))
+    return undefined;
+  const formats: string[][] = [];
+  let left = dated;
+  while (left.length) {
+    const counts = COMMON_DAY_FORMATS.map(candidate => left.reduce((count, heading) => count + Number(heading.fits.includes(candidate)), 0));
+    const best = COMMON_DAY_FORMATS[counts.indexOf(Math.max(...counts))]!;
+    const group = left.filter(heading => heading.fits.includes(best));
+    formats.push(COMMON_DAY_FORMATS.filter(candidate => group.every(heading => heading.fits.includes(candidate))));
+    left = left.filter(heading => !heading.fits.includes(best));
+  }
+  const only = formats.length === 1 && formats[0]!.length === 1
+    ? formats[0]![0]
+    : undefined;
+  return {
+    example,
+    formats,
+    mixed: read > 0,
+    ...(read === 0 && filled(only)
+      ? { suggestion: only }
+      : {}),
+  };
+}
 function separator(before: string, newline: string): string {
   return before.endsWith(newline + newline)
     ? ''

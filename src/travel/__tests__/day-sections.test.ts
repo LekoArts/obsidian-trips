@@ -1,6 +1,6 @@
 import type { DaySections } from '../../types';
 import { expect, it } from 'vitest';
-import { generateDays } from '../day-sections';
+import { dayFormatMismatch, generateDays } from '../day-sections';
 
 const config: DaySections = {
   enabled: true,
@@ -60,4 +60,71 @@ it('day headings can use any readable Moment format, and are recognised in it ag
   const once = generateDays('', '2026-05-27', '2026-05-28', named);
   expect(once).toBe('## Wednesday, 27 May 2026\n\n### Activities\n\n## Thursday, 28 May 2026\n\n### Activities\n\n');
   expect(generateDays(once, '2026-05-27', '2026-05-28', named)).toBe(once);
+});
+it('headings written in another date format are reported with the one format they all use', () => {
+  expect(dayFormatMismatch(['10.05.2026', '11.05.2026', 'Notes'], 'YYYY-MM-DD')).toEqual({
+    example: '10.05.2026',
+    formats: [
+      ['DD.MM.YYYY'],
+    ],
+    mixed: false,
+    suggestion: 'DD.MM.YYYY',
+  });
+  expect(dayFormatMismatch(['10.05.2026', '11.05.2026'], 'DD.MM.YYYY')).toBeUndefined();
+  expect(dayFormatMismatch(['Notes', 'Day 1', '2026'], 'YYYY-MM-DD')).toBeUndefined();
+});
+it('a format is suggested only when it is the only fit and no heading already uses the configured one', () => {
+  expect(dayFormatMismatch(['05/06/2026', '25/06/2026'], 'YYYY-MM-DD')).toEqual({
+    example: '05/06/2026',
+    formats: [
+      ['DD/MM/YYYY'],
+    ],
+    mixed: false,
+    suggestion: 'DD/MM/YYYY',
+  });
+  expect(dayFormatMismatch(['2026-05-10', '11.05.2026'], 'YYYY-MM-DD')).toEqual({
+    example: '11.05.2026',
+    formats: [
+      ['DD.MM.YYYY'],
+    ],
+    mixed: true,
+  });
+  expect(dayFormatMismatch(['10.5.2026'], 'YYYY-MM-DD')).toEqual({
+    example: '10.5.2026',
+    formats: [
+      ['D.M.YYYY'],
+    ],
+    mixed: false,
+    suggestion: 'D.M.YYYY',
+  });
+});
+it('a heading that fits several formats is not guessed: it is counted towards the format other headings share', () => {
+  expect(dayFormatMismatch(['05/06/2026'], 'YYYY-MM-DD')).toEqual({
+    example: '05/06/2026',
+    formats: [
+      ['DD/MM/YYYY', 'MM/DD/YYYY'],
+    ],
+    mixed: false,
+  });
+  expect(dayFormatMismatch(['2026-07-01', '05/06/2026', '11/25/2026'], 'YYYY-MM-DD')).toEqual({
+    example: '05/06/2026',
+    formats: [
+      ['MM/DD/YYYY'],
+    ],
+    mixed: true,
+  });
+  expect(dayFormatMismatch(['05/06/2026', '11/25/2026'], 'YYYY-MM-DD')?.suggestion).toBe('MM/DD/YYYY');
+  expect(dayFormatMismatch(['10.05.2026', '11.05.2026', '12/05/2026'], 'YYYY-MM-DD')).toEqual({
+    example: '10.05.2026',
+    formats: [
+      ['DD.MM.YYYY'],
+      ['DD/MM/YYYY', 'MM/DD/YYYY'],
+    ],
+    mixed: false,
+  });
+});
+it('headings with day and month names are matched to their format, not skipped for their punctuation', () => {
+  expect(dayFormatMismatch(['Wednesday, 27 May 2026', 'Thursday, 28 May 2026'], 'YYYY-MM-DD')?.suggestion).toBe('dddd, D MMMM YYYY');
+  expect(dayFormatMismatch(['May 27, 2026'], 'YYYY-MM-DD')?.suggestion).toBe('MMMM D, YYYY');
+  expect(dayFormatMismatch(['27. May 2026'], 'YYYY-MM-DD')?.suggestion).toBe('D. MMMM YYYY');
 });
