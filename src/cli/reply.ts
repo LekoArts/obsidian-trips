@@ -9,6 +9,13 @@ export type CliCode
     | 'DATES_INVALID'
     | 'DESTINATION_EXISTS'
     | 'WRITE_FAILED'
+    | 'NOTE_NOT_FOUND'
+    | 'NOTE_AMBIGUOUS'
+    | 'NOT_ON_DAY'
+    | 'DAY_OUTSIDE_ENTRY'
+    | 'OUTSIDE_TRIP'
+    | 'CANNOT_EDIT'
+    | 'CHANGED'
     | 'INTERNAL';
 
 /** Which files a failed write touched, so a caller never has to parse prose to know what changed. */

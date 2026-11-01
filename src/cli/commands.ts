@@ -58,7 +58,7 @@ async function settled<T>(ctx: CliContext, find: () => T | undefined): Promise<T
   }
 }
 
-function setUpTypes(ctx: CliContext): NoteType[] {
+export function setUpTypes(ctx: CliContext): NoteType[] {
   const profile = ctx.settings().profile;
   if (!profile.types.length)
     throw new CliError('NOT_SET_UP', 'Trips is not set up in this vault. Ask the user to set it up in Obsidian under Settings → Trips.');
@@ -75,7 +75,7 @@ const recognized = (note: RecognizedNote) => filled(note.typeId) && !note.diagno
 const matches = (path: string, wanted: string) => path === wanted || path === `${wanted}.md` || noteName(path) === wanted;
 
 /** A recognized trip by path or by note name, if only one trip has that name. */
-async function findTrip(ctx: CliContext, wanted: string): Promise<string> {
+export async function findTrip(ctx: CliContext, wanted: string): Promise<string> {
   const found = await settled(ctx, () => {
     const paths = tripPaths(dataHost(ctx)).filter(path => matches(path, wanted));
     return paths.length ? paths : undefined;
@@ -87,16 +87,23 @@ async function findTrip(ctx: CliContext, wanted: string): Promise<string> {
   return found[0]!;
 }
 
-async function findActivity(ctx: CliContext, tripPath: string, wanted: string): Promise<string> {
+/** An activity, or a day plan/stop (`entry`), of the trip by path or by note name, if only one has that name. */
+export async function findChild(ctx: CliContext, tripPath: string, role: 'activity' | 'entry', wanted: string): Promise<string> {
   const types = ctx.settings().profile.types;
   const found = await settled(ctx, () => {
-    const paths = ctx.index().filter(note => recognized(note) && note.parentPath === tripPath && types.find(type => type.id === note.typeId)?.role === 'activity' && matches(note.path, wanted)).map(note => note.path);
+    const paths = ctx.index().filter(note => recognized(note) && note.parentPath === tripPath && types.find(type => type.id === note.typeId)?.role === role && matches(note.path, wanted)).map(note => note.path);
     return paths.length ? paths : undefined;
   });
+  if (role === 'activity') {
+    if (!found)
+      throw new CliError('ACTIVITY_NOT_FOUND', `${noteName(tripPath)} has no activity named ${wanted}. Create it with trips:create first; if it was just created, retry in a moment.`);
+    if (found.length > 1)
+      throw new CliError('ACTIVITY_AMBIGUOUS', `Several activities of ${noteName(tripPath)} are named ${wanted}; pass one of these paths: ${found.join(', ')}`);
+  }
   if (!found)
-    throw new CliError('ACTIVITY_NOT_FOUND', `${noteName(tripPath)} has no activity named ${wanted}. Create it with trips:create first; if it was just created, retry in a moment.`);
+    throw new CliError('NOTE_NOT_FOUND', `${noteName(tripPath)} has no day plan or stop named ${wanted}. Check the entries in trips:list; if it was just created, retry in a moment.`);
   if (found.length > 1)
-    throw new CliError('ACTIVITY_AMBIGUOUS', `Several activities of ${noteName(tripPath)} are named ${wanted}; pass one of these paths: ${found.join(', ')}`);
+    throw new CliError('NOTE_AMBIGUOUS', `Several day plans or stops of ${noteName(tripPath)} are named ${wanted}; pass one of these paths: ${found.join(', ')}`);
   return found[0]!;
 }
 
@@ -264,7 +271,7 @@ async function draftActivities(ctx: CliContext, type: NoteType, request: CreateR
       if (!validDate(activity.day) || activity.day < (request.start ?? '') || activity.day > (request.end ?? ''))
         throw new CliError('DATES_INVALID', `${activity.day} must be a YYYY-MM-DD day from ${request.start ?? '?'} to ${request.end ?? '?'}`);
     }
-    const path = await findActivity(ctx, tripPath, activity.name);
+    const path = await findChild(ctx, tripPath, 'activity', activity.name);
     result.push({
       link: ctx.linkText(path, tripPath),
       day: activity.day,
