@@ -1,6 +1,6 @@
 {
   "$schema": "https://unpkg.com/@changesets/config@4.0.1/schema.json",
-  "changelog": ["@changesets/changelog-github", { "repo": "LekoArts/obsidian-trips" }],
+  "changelog": ["@changesets/changelog-github", { "repo": "LekoArts/obsidian-trips", "disableThanks": true }],
   "commit": false,
   "baseBranch": "main",
   "privatePackages": { "version": true, "tag": false },
