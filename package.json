@@ -1,7 +1,7 @@
 {
   "name": "trips",
   "type": "module",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "packageManager": "pnpm@12.16.1",
   "description": "Plan trips in your notes: create them from your templates and keep their dates, day plans and activities consistent.",
