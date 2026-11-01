@@ -17,7 +17,7 @@
 
 .travel-planner { max-width: 60rem; margin-inline: auto; overflow-wrap: anywhere; }
 /* Text that names a control for screen readers without taking space on screen (the button's icon or visible text says it already). */
-.travel-sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.travel-sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .travel-planner input, .travel-planner select, .travel-planner textarea { max-width: 100%; min-width: 0; }
 .travel-planner select.dropdown { overflow: hidden; text-overflow: ellipsis; }
 .travel-planner pre, .travel-planner code { white-space: pre-wrap; overflow-wrap: anywhere; }
@@ -78,7 +78,7 @@
 .travel-form > fieldset { border: 0; padding: 0; }
 .travel-form button { margin-block: var(--size-4-1); margin-inline-end: var(--size-4-2); }
 .travel-field-error { color: var(--text-error); font-size: var(--font-ui-small); margin-block: calc(-1 * var(--size-4-2)) var(--size-4-2); }
-.travel-date-pair { display: flex; flex-wrap: wrap; column-gap: var(--size-4-4); }
+.travel-date-pair { display: flex; flex-wrap: wrap; gap: 0 var(--size-4-4); }
 .travel-date-pair > div { flex: 1 1 10rem; min-width: 0; }
 .travel-planner .modal-button-container { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--size-4-2); margin-block-start: var(--size-4-4); }
 .travel-planner .modal-button-container button { margin: 0; }
@@ -122,14 +122,13 @@
 .travel-pool { margin-block-end: var(--size-4-6); padding: var(--size-4-3); border: var(--border-width) solid var(--background-modifier-border); border-radius: var(--radius-m); }
 .travel-pool.is-over { background: var(--background-modifier-hover); border-color: var(--interactive-accent); }
 .travel-pool h3, .travel-extras h3 { margin: 0 0 var(--size-4-2); font-size: var(--font-ui-small); font-weight: var(--font-semibold); color: var(--text-muted); }
-.travel-pool .travel-activities { columns: 18rem; column-gap: var(--size-4-6); }
-.travel-pool .travel-activity { break-inside: avoid; }
+.travel-pool .travel-activities { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(18rem, 100%), 1fr)); gap: 0 var(--size-4-6); }
 .travel-count { font-weight: normal; color: var(--text-faint); }
 .travel-pool > .travel-link-button { margin-block-start: var(--size-4-2); font-size: var(--font-ui-small); }
 .travel-extras { display: flex; flex-direction: column; gap: var(--size-4-5); margin-block-start: var(--size-4-6); }
 
 /* A day: the date on the left, on the same line as the first thing in it. */
-.travel-day { display: grid; grid-template-columns: var(--travel-day-label) minmax(0, 1fr); column-gap: var(--size-4-3); padding-block: var(--size-4-2); border-top: var(--border-width) solid var(--background-modifier-border); }
+.travel-day { display: grid; grid-template-columns: var(--travel-day-label) minmax(0, 1fr); gap: 0 var(--size-4-3); padding-block: var(--size-4-2); border-top: var(--border-width) solid var(--background-modifier-border); }
 .travel-day:last-child { border-bottom: var(--border-width) solid var(--background-modifier-border); }
 .travel-day.is-over { background: var(--background-modifier-hover); }
 .travel-day-label { display: flex; align-self: start; align-items: center; gap: var(--size-4-1); min-height: var(--travel-line); color: var(--text-muted); font-size: var(--font-ui-small); font-variant-numeric: tabular-nums; white-space: nowrap; }
