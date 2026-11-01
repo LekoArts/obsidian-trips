@@ -1,7 +1,7 @@
 {
   "name": "trips",
   "type": "module",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "private": true,
   "packageManager": "pnpm@12.16.1",
   "description": "Travel planner for your vault. Create trips, day plans, stops and activities from templates, with dates and links filled in. Rearrange your itinerary by day in a trip tab.",

@@ -1,5 +1,11 @@
 # trips
 
+## 1.1.1
+
+### Patch Changes
+
+- [#4](https://github.com/LekoArts/obsidian-trips/pull/4) [`3aaccf8`](https://github.com/LekoArts/obsidian-trips/commit/3aaccf82fabbd4ebcc898a33b8a63f8f49275bab) - Avoid CSS features that Obsidian's plugin review flags as only partially supported. In the trip tab, activities that aren't on a day now fill their columns row by row, in the same order the Tab key moves through them.
+
 ## 1.1.0
 
 ### Minor Changes
