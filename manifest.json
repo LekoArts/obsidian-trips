@@ -1,0 +1,11 @@
+{
+  "id": "trips",
+  "name": "Trips",
+  "version": "1.0.0",
+  "minAppVersion": "1.13.1",
+  "description": "Plan trips in your notes. Create them from your templates and keep their dates, day plans and activities consistent.",
+  "author": "LekoArts",
+  "authorUrl": "https://github.com/LekoArts",
+  "isDesktopOnly": false,
+  "fundingUrl": "https://github.com/sponsors/LekoArts"
+}

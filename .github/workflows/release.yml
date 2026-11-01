@@ -1,0 +1,82 @@
+name: Release
+
+# Changesets on main open a "Version packages" pull request. Merging it leaves main without changesets and with a
+# manifest version that has no tag yet; this workflow then builds, attests and releases exactly that version.
+on:
+  push:
+    branches: [main]
+
+concurrency: release
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Open or update the version pull request
+        id: changesets
+        uses: changesets/action@v2
+        with:
+          version: pnpm version-packages
+          title: Version packages
+          commit: Version packages
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Find an unreleased version
+        id: version
+        if: steps.changesets.outputs.hasChangesets == 'false'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          version="$(node -p "require('./manifest.json').version")"
+          if [ "$version" != "$(node -p "require('./package.json').version")" ]; then
+            echo "manifest.json and package.json versions differ" >&2
+            exit 1
+          fi
+          if gh release view "$version" >/dev/null 2>&1; then
+            echo "release=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "release=true" >> "$GITHUB_OUTPUT"
+            echo "version=$version" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check and build
+        if: steps.version.outputs.release == 'true'
+        run: |
+          pnpm test
+          pnpm lint
+          pnpm check
+          pnpm build
+
+      - name: Generate artifact attestation
+        if: steps.version.outputs.release == 'true'
+        uses: actions/attest@v4
+        with:
+          subject-path: |
+            main.js
+            manifest.json
+            styles.css
+
+      - name: Create release
+        if: steps.version.outputs.release == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          awk -v v="$VERSION" '$0 == "## " v { found = 1; next } /^## / && found { exit } found' CHANGELOG.md > notes.md 2>/dev/null || true
+          [ -s notes.md ] || echo "Release $VERSION." > notes.md
+          gh release create "$VERSION" --target "$GITHUB_SHA" --title "$VERSION" --notes-file notes.md \
+            main.js manifest.json styles.css

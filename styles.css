@@ -1,0 +1,180 @@
+/*
+ * Spacing, control and text sizes come from Obsidian's own scales: `--size-4-*` for padding and gaps,
+ * `--input-height` for one row of controls, `--font-ui-*` for type. Only sizes Obsidian has no variable for are
+ * the plugin's own, below.
+ */
+.travel-planner {
+  --travel-icon: 1.75rem; /* square icon buttons, the size Obsidian's own icon buttons land on */
+  --travel-line: 1.75rem; /* one entry or activity line in the day list */
+  --travel-day-label: 6.5rem; /* the date column of the day list */
+  --travel-date-field: 9.5rem; /* a date picker beside its label */
+  --travel-rail: 3px; /* the colour edge of an entry */
+  --travel-measure: 46rem; /* reading width of the day list */
+}
+.is-phone .travel-planner { --travel-icon: var(--input-height); --travel-day-label: 5.25rem; }
+/* Long day and month names wrap on a phone instead of running into the day's content. */
+.is-phone .travel-day-label { white-space: normal; }
+
+.travel-planner { max-width: 60rem; margin-inline: auto; overflow-wrap: anywhere; }
+/* Text that names a control for screen readers without taking space on screen (the button's icon or visible text says it already). */
+.travel-sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.travel-planner input, .travel-planner select, .travel-planner textarea { max-width: 100%; min-width: 0; }
+.travel-planner select.dropdown { overflow: hidden; text-overflow: ellipsis; }
+.travel-planner pre, .travel-planner code { white-space: pre-wrap; overflow-wrap: anywhere; }
+.travel-planner [role="alert"] { color: var(--text-error); }
+/* A label may wrap; icon and link buttons keep their own size. */
+.travel-planner button { height: auto; white-space: normal; }
+.travel-planner button:not(.clickable-icon, .travel-link-button) { min-height: var(--input-height); }
+.travel-planner .clickable-icon { flex: none; width: var(--travel-icon); height: var(--travel-icon); padding: 0; }
+/* The icon sits in a block wrapper taller than the glyph by its line height; centre that too, so the glyph is centred. */
+.travel-planner .clickable-icon > span { display: flex; align-items: center; justify-content: center; }
+.travel-planner fieldset { min-width: 0; }
+
+/* Settings and the field editor: Obsidian's own rows, with this plugin's gaps. */
+.travel-configuration { container-type: inline-size; }
+.travel-configuration .setting-item { gap: var(--size-4-4); }
+.travel-configuration .setting-item-info { min-width: 0; }
+.travel-configuration .setting-item-name { display: block; }
+.travel-configuration .setting-item-control { min-width: 0; flex-shrink: 1; }
+.travel-configuration .setting-item-control input:not([type="checkbox"]),
+.travel-configuration .setting-item-control select { width: 14rem; }
+.travel-configuration .travel-setting-stacked { flex-direction: column; align-items: stretch; }
+.travel-configuration .travel-setting-stacked .setting-item-info { margin-inline-end: 0; }
+.travel-configuration .travel-setting-stacked .setting-item-control { justify-content: stretch; }
+.travel-configuration .travel-setting-stacked :is(input:not([type="checkbox"]), select, textarea) { width: 100%; }
+.travel-configuration textarea { min-height: 6rem; resize: vertical; }
+.travel-configuration .setting-item-description { line-height: 1.5; }
+/* A row whose control is a button: the button keeps its one-line label and only it reacts to the pointer. */
+.travel-configuration .travel-setting-action .setting-item-control { flex-shrink: 0; }
+.travel-configuration .travel-setting-action button { white-space: nowrap; }
+@container (max-width: 420px) {
+  .travel-configuration .setting-item { flex-wrap: wrap; }
+  .travel-configuration .setting-item-info { margin-inline-end: 0; }
+  body:not(.is-phone) .travel-configuration .setting-item-info { flex: 1 1 12rem; }
+  .travel-configuration .setting-item-control { flex-wrap: wrap; max-width: 100%; }
+  .travel-configuration .setting-item-control input:not([type="checkbox"]),
+  .travel-configuration .setting-item-control select { width: 100%; }
+}
+/* Installing the preset: a list of files, each with its destination. */
+.travel-install ul { list-style: none; padding: 0; margin: 0 0 var(--size-4-4); }
+.travel-install li { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: var(--size-4-2); padding-block: var(--size-4-1); border-bottom: var(--border-width) solid var(--background-modifier-border); }
+.travel-install code { font-size: var(--font-ui-small); }
+.travel-install h3 { font-size: var(--font-ui-medium); margin-block: var(--size-4-4) var(--size-4-2); }
+.travel-install-status { color: var(--text-muted); font-size: var(--font-ui-small); }
+
+/* Forms: label above its control, like Obsidian's own dialogs. */
+.travel-form :is(label, .travel-field-label) { display: block; margin-block: var(--size-4-3) var(--size-4-1); }
+.travel-form :is(input:not([type="checkbox"]), select, textarea) { width: 100%; }
+.travel-form :is(input, textarea) + .travel-field-error,
+.travel-form :is(input, textarea) + .setting-item-description { margin-block: var(--size-4-1) 0; }
+.travel-toggle-field { display: flex; align-items: center; justify-content: space-between; gap: var(--size-4-2); margin-block: var(--size-4-3); }
+.travel-chosen { list-style: none; margin: 0 0 var(--size-4-2); padding: 0; }
+.travel-chosen li { display: flex; align-items: center; gap: var(--size-4-2); padding-block: var(--size-4-1); border-bottom: var(--border-width) solid var(--background-modifier-border); }
+.travel-chosen li > span { flex: 1 1 auto; min-width: 0; }
+.travel-form .travel-chosen select { width: auto; }
+.travel-form .travel-chosen button { margin: 0; }
+.travel-form textarea { min-height: 5rem; }
+.travel-form fieldset, .travel-itinerary fieldset { border: var(--border-width) solid var(--background-modifier-border); border-radius: var(--radius-m); margin-block: var(--size-4-4); padding: var(--size-4-4); }
+.travel-form > fieldset { border: 0; padding: 0; }
+.travel-form button { margin-block: var(--size-4-1); margin-inline-end: var(--size-4-2); }
+.travel-field-error { color: var(--text-error); font-size: var(--font-ui-small); margin-block: calc(-1 * var(--size-4-2)) var(--size-4-2); }
+.travel-date-pair { display: flex; flex-wrap: wrap; column-gap: var(--size-4-4); }
+.travel-date-pair > div { flex: 1 1 10rem; min-width: 0; }
+.travel-planner .modal-button-container { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--size-4-2); margin-block-start: var(--size-4-4); }
+.travel-planner .modal-button-container button { margin: 0; }
+
+/* Trip tab: one column, as in agenda views. */
+.travel-itinerary { container-type: inline-size; max-width: var(--travel-measure); margin-inline: auto; padding: var(--size-4-4) var(--size-4-4) 0; }
+.travel-itinerary ul, .travel-itinerary ol { list-style: none; margin: 0; padding: 0; }
+.travel-itinerary button { margin: 0; }
+.travel-itinerary h3 { font-size: var(--font-ui-small); font-weight: var(--font-semibold); color: var(--text-muted); margin: 0 0 var(--size-4-2); }
+
+/* Header: the trip's name and dates, then its date editor on its own line. */
+.travel-trip-header { display: flex; flex-direction: column; gap: var(--size-4-2); margin-block-end: var(--size-4-4); }
+.travel-trip-summary { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--size-4-3); }
+.travel-trip-summary > .clickable-icon { align-self: center; margin-inline-start: auto; }
+.travel-itinerary .travel-trip-title { margin: 0; min-width: 0; width: auto; border: 0; padding: 0; }
+.travel-planner .travel-trip-title .travel-link-button { color: var(--text-normal); font: inherit; display: inline-flex; align-items: center; gap: var(--size-4-1); }
+.travel-open { color: var(--text-faint); display: inline-flex; }
+.travel-open svg { width: var(--icon-s); height: var(--icon-s); }
+.travel-trip-dates { font-variant-numeric: tabular-nums; }
+.travel-planner .travel-link-button { background: none; box-shadow: none; border: 0; padding: 0; min-height: 0; height: auto; color: var(--text-muted); cursor: pointer; text-align: start; }
+.travel-planner .travel-link-button:hover:not(:disabled) { color: var(--text-normal); text-decoration: underline; }
+.travel-planner :is(.travel-link-button, .travel-entry-name, .travel-activity-name):focus-visible { box-shadow: 0 0 0 2px var(--background-modifier-border-focus); border-radius: var(--radius-s); outline: none; }
+
+/* Date editors: the label above its field, everything on one bottom edge. */
+.travel-itinerary label { display: flex; flex-direction: column; align-items: stretch; gap: var(--size-4-1); margin: 0; color: var(--text-muted); }
+.travel-itinerary label > :is(input, select, textarea) { flex: none; width: auto; }
+.travel-inline-actions { display: flex; flex-wrap: wrap; align-items: end; gap: var(--size-4-2); }
+.travel-inline-actions input[type="date"] { width: var(--travel-date-field); }
+/* Date pickers and the buttons beside them share one height, so their bottom edges line up. */
+:is(.travel-inline-actions, .travel-dates) :is(input[type="date"], button) { min-height: var(--input-height); }
+.travel-inline-actions .travel-field-error { flex-basis: 100%; margin: 0; }
+.travel-dates { display: flex; flex-wrap: wrap; align-items: end; gap: var(--size-4-3); margin-block: var(--size-4-1) var(--size-4-2); padding: var(--size-4-2) var(--size-4-3); border: var(--border-width) solid var(--background-modifier-border); border-radius: var(--radius-m); background: var(--background-secondary); font-size: var(--font-ui-small); }
+.travel-dates input[type="date"] { width: var(--travel-date-field); }
+.travel-stepper { display: inline-flex; align-items: center; gap: var(--size-4-1); min-height: var(--input-height); font-variant-numeric: tabular-nums; }
+
+.travel-attention { margin-block-end: var(--size-4-4); font-size: var(--font-ui-small); }
+.travel-attention li { padding-block: var(--size-2-1); color: var(--text-muted); }
+.travel-faint { color: var(--text-faint); }
+
+/* Not on a day: what a drag can put on a day, beside the days themselves. */
+.travel-pool { margin-block-end: var(--size-4-6); padding: var(--size-4-3); border: var(--border-width) solid var(--background-modifier-border); border-radius: var(--radius-m); }
+.travel-pool.is-over { background: var(--background-modifier-hover); border-color: var(--interactive-accent); }
+.travel-pool h3, .travel-extras h3 { margin: 0 0 var(--size-4-2); font-size: var(--font-ui-small); font-weight: var(--font-semibold); color: var(--text-muted); }
+.travel-pool .travel-activities { columns: 18rem; column-gap: var(--size-4-6); }
+.travel-pool .travel-activity { break-inside: avoid; }
+.travel-count { font-weight: normal; color: var(--text-faint); }
+.travel-pool > .travel-link-button { margin-block-start: var(--size-4-2); font-size: var(--font-ui-small); }
+.travel-extras { display: flex; flex-direction: column; gap: var(--size-4-5); margin-block-start: var(--size-4-6); }
+
+/* A day: the date on the left, on the same line as the first thing in it. */
+.travel-day { display: grid; grid-template-columns: var(--travel-day-label) minmax(0, 1fr); column-gap: var(--size-4-3); padding-block: var(--size-4-2); border-top: var(--border-width) solid var(--background-modifier-border); }
+.travel-day:last-child { border-bottom: var(--border-width) solid var(--background-modifier-border); }
+.travel-day.is-over { background: var(--background-modifier-hover); }
+.travel-day-label { display: flex; align-self: start; align-items: center; gap: var(--size-4-1); min-height: var(--travel-line); color: var(--text-muted); font-size: var(--font-ui-small); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.travel-overlap { color: var(--text-warning); display: inline-flex; }
+.travel-overlap svg { width: var(--icon-xs); height: var(--icon-xs); }
+.travel-day-body { display: flex; flex-direction: column; gap: var(--size-4-2); min-width: 0; }
+.travel-free { display: flex; flex-wrap: wrap; align-items: center; gap: var(--size-4-3); min-height: var(--travel-line); font-size: var(--font-ui-small); }
+
+/* An entry on a day: a rail in its own colour, the same on every day it covers. */
+.travel-slot { --travel-tone: var(--color-blue); position: relative; min-width: 0; padding-inline-start: var(--size-4-3); border-inline-start: var(--travel-rail) solid var(--travel-tone); }
+.travel-tone-1 { --travel-tone: var(--color-green); }
+.travel-tone-2 { --travel-tone: var(--color-orange); }
+.travel-tone-3 { --travel-tone: var(--color-purple); }
+.travel-tone-4 { --travel-tone: var(--color-cyan); }
+.travel-tone-5 { --travel-tone: var(--color-pink); }
+.travel-slot.is-over { background: var(--background-modifier-hover); }
+.travel-slot.is-busy { opacity: 0.5; }
+.travel-entry-head { display: flex; align-items: center; gap: var(--size-4-1); min-height: var(--travel-line); min-width: 0; }
+.travel-planner .travel-entry-name { display: block; flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; background: none; box-shadow: none; border: 0; padding: 0; height: auto; font-weight: var(--font-semibold); color: var(--text-normal); cursor: grab; }
+.travel-planner .travel-entry-name:hover { text-decoration: underline; }
+.travel-entry-cont { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-faint); font-size: var(--font-ui-small); }
+.travel-planner .travel-length { flex: none; font-size: var(--font-ui-small); color: var(--text-faint); font-variant-numeric: tabular-nums; }
+
+.travel-activities { min-width: 0; }
+.travel-activity { display: flex; align-items: center; gap: var(--size-4-1); min-height: var(--travel-line); min-width: 0; border-radius: var(--radius-s); }
+.travel-activity.is-drop-before { box-shadow: inset 0 2px 0 var(--interactive-accent); }
+.travel-grip { flex: none; width: var(--size-4-3); color: var(--text-faint); cursor: grab; visibility: hidden; }
+.travel-planner .travel-activity-name { display: block; flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; background: none; box-shadow: none; border: 0; padding: 0; height: auto; color: var(--text-normal); font-size: var(--font-ui-small); cursor: pointer; text-align: start; }
+.travel-activity-name.is-unresolved { color: var(--text-muted); cursor: default; }
+.travel-stray-note { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--font-ui-smaller); color: var(--text-warning); }
+.travel-activity.is-stray .travel-activity-name { color: var(--text-muted); }
+
+/* Hover-only controls, as in Obsidian's file list. They keep their space, so nothing moves on hover. */
+.travel-planner .travel-hover { opacity: 0; }
+.travel-planner :is(.travel-activity, .travel-entry-head):is(:hover, :focus-within) > :is(.travel-hover, .travel-grip),
+.travel-planner .travel-slot:is(:hover, :focus-within) > .travel-entry-head > .travel-hover,
+.travel-planner .travel-hover:focus-visible { opacity: 1; visibility: visible; }
+.is-phone .travel-planner .travel-hover { opacity: 1; }
+.travel-itinerary.is-dragging .travel-hover { opacity: 0; }
+
+.travel-refusal { display: flex; flex-wrap: wrap; align-items: center; gap: var(--size-4-2); margin-block: var(--size-4-1); padding: var(--size-4-1) var(--size-4-2); border-radius: var(--radius-s); background: var(--background-secondary); color: var(--text-normal); font-size: var(--font-ui-small); }
+.travel-bar { position: sticky; bottom: var(--size-4-3); display: flex; flex-wrap: wrap; align-items: center; gap: var(--size-4-3); margin-block-start: var(--size-4-4); padding: var(--size-4-2) var(--size-4-3); border: var(--border-width) solid var(--background-modifier-border); border-radius: var(--radius-m); background: var(--background-primary); box-shadow: var(--shadow-s); font-size: var(--font-ui-small); }
+.travel-bar > span { flex: 1 1 16rem; }
+
+.is-phone .travel-planner .travel-link-button { min-height: var(--input-height); }
+.is-phone .travel-activity { min-height: var(--input-height); }
+/* On a phone the entry it belongs to can be too long for the line, so it gets one of its own. */
+.is-phone .travel-stray-note { flex-basis: 100%; white-space: normal; }

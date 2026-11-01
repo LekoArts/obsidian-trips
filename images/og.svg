@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, Helvetica, Arial, sans-serif">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2a7cc2"/>
+      <stop offset="1" stop-color="#14558f"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="18" stdDeviation="22" flood-color="#0a2d4d" flood-opacity="0.35"/>
+    </filter>
+    <g id="folder"><path d="M0 1.5 Q0 0 1.5 0 H5 L6.5 2 H12.5 Q14 2 14 3.5 V10.5 Q14 12 12.5 12 H1.5 Q0 12 0 10.5 Z" fill="#8c959f"/></g>
+    <g id="doc"><path d="M0.5 0.5 H8 L11.5 4 V13.5 H0.5 Z M8 0.5 V4 H11.5" fill="#ffffff" stroke="#8c959f"/><path d="M3 6.5 H9 M3 8.75 H9 M3 11 H7" stroke="#8c959f" stroke-linecap="round"/></g>
+    <g id="pin"><path d="M0 -22 C-9 -22 -14 -15 -14 -9 C-14 0 0 12 0 12 C0 12 14 0 14 -9 C14 -15 9 -22 0 -22 Z" fill="#ffb054"/><circle cy="-9" r="5" fill="#ffffff"/></g>
+  </defs>
+  <style>
+    .t { fill: #1f2328; }
+    .m { fill: #59636e; }
+    .s { fill: #8c959f; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .key { font-size: 13px; fill: #1f6fb2; font-weight: 600; }
+  </style>
+
+  <rect width="1200" height="630" fill="url(#bg)"/>
+
+  <!-- route -->
+  <path d="M640 92 C 760 40, 860 140, 960 80 S 1120 70, 1150 150" fill="none" stroke="#ffc98a" stroke-opacity="0.8" stroke-width="3" stroke-dasharray="2 10" stroke-linecap="round"/>
+  <use href="#pin" x="640" y="92"/>
+  <use href="#pin" x="960" y="80"/>
+  <use href="#pin" x="1150" y="150"/>
+
+  <!-- copy -->
+  <rect x="72" y="88" width="148" height="34" rx="17" fill="#ffffff" fill-opacity="0.16"/>
+  <text x="146" y="111" text-anchor="middle" font-size="16" font-weight="600" fill="#ffffff">Obsidian plugin</text>
+  <text x="68" y="214" font-size="92" font-weight="800" fill="#ffffff" letter-spacing="-2">Trips</text>
+  <path d="M412 304 Q505 296 598 302" fill="none" stroke="#ffb054" stroke-width="6" stroke-linecap="round"/>
+  <text x="72" y="292" font-size="40" font-weight="700" fill="#ffffff">Plan every trip the same way,</text>
+  <text x="72" y="342" font-size="40" font-weight="700" fill="#ffffff">in your own notes.</text>
+  <text x="72" y="400" font-size="22" fill="#dbe9f6">Folders, dates, links and a section for every day,</text>
+  <text x="72" y="430" font-size="22" fill="#dbe9f6">built from your own templates.</text>
+
+  <g font-size="17" font-weight="600" fill="#ffffff">
+    <rect x="72" y="514" width="150" height="40" rx="20" fill="#ffffff" fill-opacity="0.16"/>
+    <text x="147" y="540" text-anchor="middle">Your templates</text>
+    <rect x="234" y="514" width="132" height="40" rx="20" fill="#ffffff" fill-opacity="0.16"/>
+    <text x="300" y="540" text-anchor="middle">Day sections</text>
+    <rect x="378" y="514" width="180" height="40" rx="20" fill="#ffffff" fill-opacity="0.16"/>
+    <text x="468" y="540" text-anchor="middle">Drag to reschedule</text>
+  </g>
+
+  <!-- back card: structure -->
+  <g transform="rotate(-4 800 320)" filter="url(#shadow)">
+    <rect x="636" y="176" width="320" height="292" rx="14" fill="#ffffff"/>
+    <g font-size="16">
+      <use href="#folder" x="656" y="200"/><text x="676" y="212" class="t">Travel</text>
+      <use href="#folder" x="674" y="228"/><text x="694" y="240" class="t">2026</text>
+      <use href="#folder" x="692" y="256"/><text x="712" y="268" class="t">South Korea</text>
+      <use href="#doc" x="711" y="282"/><text x="730" y="296" font-weight="600" class="t">South Korea.md</text>
+      <use href="#folder" x="710" y="312"/><text x="730" y="324" class="t">Planning</text>
+      <use href="#doc" x="729" y="338"/><text x="748" y="352" class="t">Busan.md</text>
+      <use href="#doc" x="729" y="366"/><text x="748" y="380" class="t">Seoul.md</text>
+      <use href="#folder" x="710" y="396"/><text x="730" y="408" class="t">Activities</text>
+      <use href="#doc" x="729" y="422"/><text x="748" y="436" class="t">Gwangalli Beach.md</text>
+    </g>
+  </g>
+
+  <!-- front card: day plan -->
+  <g transform="rotate(3 1050 420)" filter="url(#shadow)">
+    <rect x="936" y="292" width="236" height="252" rx="14" fill="#ffffff"/>
+    <use href="#doc" x="954" y="312"/><text x="974" y="325" font-size="16" font-weight="600" class="t">Busan.md</text>
+    <line x1="936" y1="340" x2="1172" y2="340" stroke="#eaeef2"/>
+    <g class="mono" font-size="13">
+      <text x="954" y="366" class="t">startDate: 2026-05-09</text>
+      <text x="954" y="386" class="t">endDate: 2026-05-16</text>
+      <text x="954" y="418" class="t">## 2026-05-09</text>
+      <text x="954" y="438" class="t">### Activities</text>
+      <text x="954" y="458" class="t">- [[Gwangalli Beach]]</text>
+      <text x="954" y="490" class="t">## 2026-05-10</text>
+      <text x="954" y="512" class="s">…</text>
+    </g>
+    <rect x="1076" y="404" width="80" height="22" rx="11" fill="#fff0dc"/>
+    <text x="1116" y="419" text-anchor="middle" class="key" style="fill:#b45309">every day</text>
+  </g>
+</svg>

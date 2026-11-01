@@ -1,0 +1,15 @@
+minimumReleaseAgeExcludePrune: true
+
+trustPolicy: no-downgrade
+# Old major lines published before these projects adopted provenance; pinned exactly so newer versions stay checked.
+trustPolicyExclude:
+  - chokidar@4.0.3
+  - semver@6.3.1
+  - synckit@0.9.3
+  - undici-types@6.21.0
+
+shellEmulator: true
+
+allowBuilds:
+  esbuild: true
+  svelte-preprocess: false
