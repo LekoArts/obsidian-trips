@@ -3,7 +3,7 @@
   "name": "Trips",
   "version": "1.1.0",
   "minAppVersion": "1.13.1",
-  "description": "Plan trips in your notes. Create them from your templates and keep their dates, day plans and activities consistent.",
+  "description": "Travel planner for your vault. Create trips, day plans, stops and activities from templates, with dates and links filled in. Rearrange your itinerary by day in a trip tab.",
   "author": "LekoArts",
   "authorUrl": "https://github.com/LekoArts",
   "isDesktopOnly": false,
