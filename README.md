@@ -1,6 +1,6 @@
 # Trips
 
-![Obsidian 1.13.1+](https://img.shields.io/badge/Obsidian-1.13.1+-483699?logo=obsidian) ![CI](https://github.com/LekoArts/obsidian-trips/actions/workflows/ci.yml/badge.svg) ![License: MIT](https://img.shields.io/badge/license-MIT-blue)
+![Obsidian 1.13.1+](https://img.shields.io/badge/Obsidian-1.13.1+-483699?logo=obsidian) ![CI](https://github.com/LekoArts/obsidian-trips/actions/workflows/ci.yml/badge.svg) ![License: MIT](https://img.shields.io/badge/license-MIT-blue) [![Agent skill](https://img.shields.io/badge/agent%20skill-trips-D97757)](skills/trips)
 
 Trips helps you plan trips in Obsidian. It creates trip notes from your templates, saves them in the right folder and fills in their dates and links. Each trip gets a tab where you move its days and activities around.
 
