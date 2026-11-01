@@ -1,7 +1,12 @@
-import type { Modal } from 'obsidian';
+import type { CliFlags, Modal } from 'obsidian';
+import type { CliContext } from './cli/commands';
 import type { NoteType, PlannerSettings, Profile, RecognizedNote, Resolution } from './types';
 import type { CreationOptions } from './ui/creation/modal';
 import { debounce, Plugin } from 'obsidian';
+import { create, kinds, list, status } from './cli/commands';
+import { assign, reschedule } from './cli/edits';
+import { answer } from './cli/reply';
+import { assignRequest, createRequest, rescheduleRequest } from './cli/request';
 import { noteName } from './config/paths';
 import { emptySettings, tripContents } from './config/profile';
 import { decodeSettings } from './config/storage';
@@ -79,6 +84,7 @@ export default class TravelPlannerPlugin extends Plugin {
       name: 'Review notes that need attention',
       callback: () => { void this.reviewAttention(); },
     });
+    this.registerCli();
     const schedule = () => this.scheduleRefresh();
     this.registerEvent(this.app.vault.on('create', schedule));
     this.registerEvent(this.app.vault.on('modify', schedule));
@@ -204,6 +210,72 @@ export default class TravelPlannerPlugin extends Plugin {
       }
     }
     catch (error) { notify(String(error).replace(/^Error:\s*/, ''), 0); }
+  }
+
+  /** Native `obsidian trips:*` commands for scripts and agents; each answers in JSON with an `ok` field. */
+  private registerCli(): void {
+    const json = { value: '<json>', description: 'The whole request as one JSON object instead of flags' };
+    const trip = { value: '<name or path>', description: 'The trip, by note name or path' };
+    const entry = { value: '<name or path>', description: 'A day plan or stop of the trip' };
+    const day = (what: string) => ({ value: '<YYYY-MM-DD>', description: what });
+    const handle = (command: string, description: string, flags: CliFlags | null, run: (ctx: CliContext, flags: Record<string, string>) => unknown) => {
+      this.registerCliHandler(command, description, flags, async params => answer(command, async () => run(await this.cliContext(), { ...params })));
+    };
+    handle('trips:status', 'Whether Trips is set up, and notes that need attention', null, ctx => status(ctx));
+    handle('trips:kinds', 'Kinds of travel notes, what a trip contains and their fields', null, ctx => kinds(ctx));
+    handle('trips:list', 'Trips with their day plans, stops and activities, and notes that need attention', null, async ctx => list(ctx));
+    handle('trips:create', 'Create a trip, day plan, stop or activity the way the creation form does', {
+      kind: { value: '<kind id>', description: 'A kind id from trips:kinds' },
+      name: { value: '<name>', description: 'The note name' },
+      start: day('Start date'),
+      end: day('End date'),
+      trip: { ...trip, description: 'The trip a day plan, stop or activity belongs to' },
+      json: { ...json, description: 'The request as JSON, needed for fields and activities' },
+    }, async (ctx, flags) => create(ctx, createRequest(flags)));
+    handle('trips:assign', 'Put an activity on a day, move or reorder it, or take it off', {
+      trip,
+      'activity': { value: '<name or path>', description: 'An activity of the trip' },
+      'action': { value: 'add|move|remove', description: 'What to do' },
+      'entry': { ...entry, description: 'The day plan or stop to put it on, or take it off' },
+      'day': day('The day in that entry'),
+      'from-entry': { ...entry, description: 'Where it is now, for move (default: entry)' },
+      'from-day': day('The day it is on now, for move'),
+      'position': { value: '<n>', description: 'Its place among that day\'s activities, from 1 (default: last)' },
+      json,
+    }, async (ctx, flags) => assign(ctx, assignRequest(flags)));
+    handle('trips:reschedule', 'Change the dates of a day plan or stop, or widen the trip', {
+      trip,
+      entry: { ...entry, description: 'The day plan or stop; leave out to change the trip' },
+      start: day('New start date'),
+      end: day('New end date'),
+      extend: { description: 'Also grow the trip when the entry would fall outside it' },
+      json,
+    }, async (ctx, flags) => reschedule(ctx, rescheduleRequest(flags)));
+  }
+
+  private async cliContext(): Promise<CliContext> {
+    this.rebuild();
+    const templates = new Map<string, string>();
+    for (const type of this.settings.profile.types) {
+      if (filled(type.template) && this.io.exists(type.template))
+        templates.set(type.template, await this.io.read(type.template));
+    }
+    return {
+      io: this.io,
+      settings: () => this.settings,
+      index: () => this.index,
+      properties: () => new Map(this.io.snapshots().map(note => [note.path, note.properties])),
+      templates,
+      linkText: (path, from) => {
+        const file = this.app.vault.getFileByPath(path);
+        return file
+          ? this.app.metadataCache.fileToLinktext(file, from, true)
+          : path;
+      },
+      rememberCreated: async notes => this.rememberCreated(notes),
+      refresh: () => this.rebuild(),
+      wait: async ms => sleep(ms),
+    };
   }
 
   openCreation(options: CreationOptions): void { new CreationModal(this, options).open(); }

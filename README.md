@@ -1,6 +1,6 @@
 # Trips
 
-![Obsidian 1.13.1+](https://img.shields.io/badge/Obsidian-1.13.1+-483699?logo=obsidian) ![CI](https://github.com/LekoArts/obsidian-trips/actions/workflows/ci.yml/badge.svg) ![License: MIT](https://img.shields.io/badge/license-MIT-blue)
+![Obsidian 1.13.1+](https://img.shields.io/badge/Obsidian-1.13.1+-483699?logo=obsidian) ![CI](https://github.com/LekoArts/obsidian-trips/actions/workflows/ci.yml/badge.svg) ![License: MIT](https://img.shields.io/badge/license-MIT-blue) [![Agent skill](https://img.shields.io/badge/agent%20skill-trips-D97757)](skills/trips)
 
 Trips helps you plan trips in Obsidian. It creates trip notes from your templates, saves them in the right folder and fills in their dates and links. Each trip gets a tab where you move its days and activities around.
 
@@ -113,6 +113,33 @@ Moving a day plan or stop changes only its date properties. Check dates and day 
 ### Fix notes Trips can't read
 
 Run **Trips: Review notes that need attention**. It lists notes that Trips can't match to one kind or one trip. Pick a note, then choose its kind or trip. Trips remembers your choice and doesn't change the note.
+
+### Use Trips from a script or agent
+
+Trips adds commands to the Obsidian CLI. Obsidian must be running with the vault open, and Trips must be set up in it. Notes come out exactly as the creation form and the trip tab write them.
+
+| Command | Does | Example |
+| --- | --- | --- |
+| `trips:status` | Whether Trips is set up, and notes that need attention | `obsidian vault=Travel trips:status` |
+| `trips:kinds` | Kinds, what a trip contains, and each kind's fields | `obsidian trips:kinds` |
+| `trips:list` | Trips with their day plans, stops, activities and days | `obsidian trips:list` |
+| `trips:create` | Create a trip, day plan, stop or activity. Flags: `kind`, `name`, `start`, `end`, `trip`, or `json` | `obsidian trips:create kind=activity name="Tram 28" trip=Lisbon` |
+| `trips:assign` | Put an activity on a day, move or reorder it, or take it off. Flags: `trip`, `activity`, `action` (`add`, `move`, `remove`), `entry`, `day`, `from-entry`, `from-day`, `position`, or `json` | `obsidian trips:assign trip=Lisbon action=add activity="Tram 28" entry=Alfama day=2026-09-11` |
+| `trips:reschedule` | New dates for a day plan or stop (`extend` also grows the trip), or wider trip dates. Flags: `trip`, `entry`, `start`, `end`, `extend`, or `json` | `obsidian trips:reschedule trip=Lisbon entry=Alfama start=2026-09-12 end=2026-09-13` |
+
+Fields and activities go in `json`, for example `json='{"kind":"planning","name":"Alfama","trip":"Lisbon","start":"2026-09-11","end":"2026-09-12","activities":[{"name":"Tram 28","day":"2026-09-11"}]}'`. Dates are `YYYY-MM-DD`; `position` counts from 1.
+
+Every command answers in JSON. The CLI always exits with 0, so check the `ok` field: when it's `false`, `error.code` and `error.message` say what went wrong and what to do. When an edit to several notes fails partway, `error.report` lists the notes that were written. There is no Undo from the CLI.
+
+Editing properties, attaching and detaching notes, deleting, Undo and fixing notes that need attention stay in Obsidian.
+
+To let an AI agent plan trips this way, install the [`trips` skill](skills/trips) with [skills](https://github.com/vercel-labs/skills):
+
+```sh
+npx skills add LekoArts/obsidian-trips --skill trips
+```
+
+It asks which agents to install it for. Add `-g` to install it for all your projects instead of the current one. You can also copy the [`skills/trips`](skills/trips) folder into the agent's skills folder by hand, for example `.claude/skills/trips`.
 
 ## Requirements
 

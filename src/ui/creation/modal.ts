@@ -1,5 +1,5 @@
 import type { App } from 'obsidian';
-import type { CreationDraft, CreationReport, ParentNote } from '../../creation/create';
+import type { CreationReport } from '../../creation/create';
 import type { ObsidianVault } from '../../io/vault';
 import type { NoteType, PlannerSettings, RecognizedNote } from '../../types';
 import { Modal } from 'obsidian';
@@ -7,11 +7,10 @@ import { mount, unmount } from 'svelte';
 import { noteName } from '../../config/paths';
 import { filled, validDate } from '../../config/validation';
 import { applyCreation, previewCreation } from '../../creation/create';
-import { capture } from '../../editing/conflicts';
+import { buildDraft } from '../../creation/draft';
 import { labelDialog } from '../dialog';
 import { pick } from '../suggest';
 import CreationForm from './CreationForm.svelte';
-import { parseFields } from './fields';
 
 export interface TripChoice { path: string; name: string; start?: string; end?: string }
 export interface ActivityChoice { link: string; label: string }
@@ -57,19 +56,6 @@ export class CreationModal extends Modal {
       throw new Error('Settings changed; close this form and open it again');
   }
 
-  private async parent(path: string): Promise<ParentNote> {
-    const note = this.host.index.find(note => note.path === path);
-    if (!filled(note?.typeId) || note.diagnostics.some(d => d.capability === 'recognition'))
-      throw new Error('The trip needs attention first; run "Review notes that need attention"');
-    const type = this.type(note.typeId);
-    if (type.role !== 'trip')
-      throw new Error('Choose a trip');
-    return {
-      ...await capture(this.host.io, path),
-      type,
-    };
-  }
-
   /** The shortest link that still points at the file, as Obsidian itself would write it. */
   private linkText(path: string, from: string): string {
     const file = this.app.vault.getFileByPath(path);
@@ -100,19 +86,12 @@ export class CreationModal extends Modal {
     this.checkProfile();
     this.host.rebuild();
     const type = this.type(this.options.typeId);
-    const parent = type.role === 'trip'
-      ? undefined
-      : await this.parent(this.options.parentPath ?? '');
-    const draft: CreationDraft = {
-      type,
-      name: form.name,
-      start: form.start || undefined,
-      end: form.end || undefined,
-      fields: parseFields(type.fields, form.fields),
-      parent,
-      parentLink: parent && this.linkText(parent.path, parent.path),
-      activities: form.activities,
-    };
+    const draft = await buildDraft({ ...form, type, parentPath: this.options.parentPath }, {
+      io: this.host.io,
+      index: this.host.index,
+      types: this.profile.types,
+      linkText: (path, from) => this.linkText(path, from),
+    });
     const plan = await previewCreation(this.host.io, [draft]);
     this.checkProfile();
     const report = await applyCreation(this.host.io, plan);
