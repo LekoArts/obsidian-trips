@@ -114,6 +114,27 @@ Moving a day plan or stop changes only its date properties. Check dates and day 
 
 Run **Trips: Review notes that need attention**. It lists notes that Trips can't match to one kind or one trip. Pick a note, then choose its kind or trip. Trips remembers your choice and doesn't change the note.
 
+### Use Trips from a script or agent
+
+Trips adds commands to the Obsidian CLI. Obsidian must be running with the vault open, and Trips must be set up in it. Notes come out exactly as the creation form and the trip tab write them.
+
+| Command | Does | Example |
+| --- | --- | --- |
+| `trips:status` | Whether Trips is set up, and notes that need attention | `obsidian vault=Travel trips:status` |
+| `trips:kinds` | Kinds, what a trip contains, and each kind's fields | `obsidian trips:kinds` |
+| `trips:list` | Trips with their day plans, stops, activities and days | `obsidian trips:list` |
+| `trips:create` | Create a trip, day plan, stop or activity. Flags: `kind`, `name`, `start`, `end`, `trip`, or `json` | `obsidian trips:create kind=activity name="Tram 28" trip=Lisbon` |
+| `trips:assign` | Put an activity on a day, move or reorder it, or take it off. Flags: `trip`, `activity`, `action` (`add`, `move`, `remove`), `entry`, `day`, `from-entry`, `from-day`, `position`, or `json` | `obsidian trips:assign trip=Lisbon action=add activity="Tram 28" entry=Alfama day=2026-09-11` |
+| `trips:reschedule` | New dates for a day plan or stop (`extend` also grows the trip), or wider trip dates. Flags: `trip`, `entry`, `start`, `end`, `extend`, or `json` | `obsidian trips:reschedule trip=Lisbon entry=Alfama start=2026-09-12 end=2026-09-13` |
+
+Fields and activities go in `json`, for example `json='{"kind":"planning","name":"Alfama","trip":"Lisbon","start":"2026-09-11","end":"2026-09-12","activities":[{"name":"Tram 28","day":"2026-09-11"}]}'`. Dates are `YYYY-MM-DD`; `position` counts from 1.
+
+Every command answers in JSON. The CLI always exits with 0, so check the `ok` field: when it's `false`, `error.code` and `error.message` say what went wrong and what to do. When an edit to several notes fails partway, `error.report` lists the notes that were written. There is no Undo from the CLI.
+
+Editing properties, attaching and detaching notes, deleting, Undo and fixing notes that need attention stay in Obsidian.
+
+To let an AI agent plan trips this way, copy the [`skills/trips`](skills/trips) folder into the agent's skills folder, for example `.claude/skills/trips`.
+
 ## Requirements
 
 Obsidian 1.13.1 or later. Works on desktop and mobile. Planning days works best on a larger screen; on a phone, the trip note's Base shows the plan.
