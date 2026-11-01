@@ -27,10 +27,10 @@ it('names every format a lone ambiguous heading could be instead of guessing one
     'Your Planning day headings, like 05/06/2026, could be DD/MM/YYYY or MM/DD/YYYY, so they aren’t read as days. Set the one you use here.',
   ]);
 });
-it('lists mixed formats, leading with the configured one when some headings already use it', () => {
+it('lists mixed formats without guessing ambiguous ones, leading with the configured format when some headings use it', () => {
   expect(copy(['10.05.2026', '12/05/2026'])).toEqual([
-    'They mix DD.MM.YYYY and DD/MM/YYYY; only YYYY-MM-DD is read.',
-    'Your Planning day headings mix DD.MM.YYYY and DD/MM/YYYY; only YYYY-MM-DD is read as days. Use one format in the notes, then set it here.',
+    'They mix DD.MM.YYYY and either DD/MM/YYYY or MM/DD/YYYY; only YYYY-MM-DD is read.',
+    'Your Planning day headings mix DD.MM.YYYY and either DD/MM/YYYY or MM/DD/YYYY; only YYYY-MM-DD is read as days. Use one format in the notes, then set it here.',
   ]);
-  expect(copy(['2026-05-10', '05/06/2026'])[0]).toBe('They mix YYYY-MM-DD with DD/MM/YYYY or MM/DD/YYYY; only YYYY-MM-DD is read.');
+  expect(copy(['2026-05-10', '05/06/2026'])[0]).toBe('They mix YYYY-MM-DD with either DD/MM/YYYY or MM/DD/YYYY; only YYYY-MM-DD is read.');
 });

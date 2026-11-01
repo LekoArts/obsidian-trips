@@ -156,13 +156,13 @@ const COMMON_DAY_FORMATS = [
 ];
 /**
  * Day headings that look like dates but aren't in the configured format, so they silently aren't days.
- * `formats`: the fewest formats that explain those headings, most used first; the format fitting the most headings is
- * taken first, so 05/06/2026 next to 11/25/2026 counts as MM/DD/YYYY. `candidates`: when one format explains them all
- * but several do equally (05/06/2026 alone), every such format, so none is guessed. `mixed`: some headings do use the
- * configured format. `suggestion`: the single format explaining them all, only when no heading uses the configured
- * format, so switching never stops other headings being read.
+ * `formats`: the fewest groups of formats that explain those headings, most headings first. Each group lists every
+ * format that explains its headings equally, so nothing is guessed: 05/06/2026 alone is [DD/MM/YYYY, MM/DD/YYYY],
+ * while next to 11/25/2026 it is [MM/DD/YYYY]. `mixed`: some headings do use the configured format. `suggestion`: the
+ * single format explaining them all, only when no heading uses the configured format, so switching never stops other
+ * headings being read.
  */
-export interface DayFormatMismatch { example: string; formats: string[]; candidates: string[]; mixed: boolean; suggestion?: string }
+export interface DayFormatMismatch { example: string; formats: string[][]; mixed: boolean; suggestion?: string }
 export function dayFormatMismatch(texts: string[], format: string): DayFormatMismatch | undefined {
   const reads = (candidate: string, text: string) => filled(parseDate(text, candidate));
   const read = texts.filter(text => reads(format, text));
@@ -173,26 +173,26 @@ export function dayFormatMismatch(texts: string[], format: string): DayFormatMis
   const example = dated[0]?.text;
   if (!filled(example))
     return undefined;
-  const formats: string[] = [];
+  const formats: string[][] = [];
   let left = dated;
   while (left.length) {
-    const fitting = (candidate: string) => left.filter(heading => heading.fits.includes(candidate)).length;
-    const best = COMMON_DAY_FORMATS.reduce((top, candidate) => fitting(candidate) > fitting(top)
+    const explained = (candidate: string) => left.filter(heading => heading.fits.includes(candidate));
+    const best = COMMON_DAY_FORMATS.reduce((top, candidate) => explained(candidate).length > explained(top).length
       ? candidate
       : top);
-    formats.push(best);
-    left = left.filter(heading => !heading.fits.includes(best));
+    const group = explained(best);
+    formats.push(COMMON_DAY_FORMATS.filter(candidate => group.every(heading => heading.fits.includes(candidate))));
+    left = left.filter(heading => !group.includes(heading));
   }
-  const common = COMMON_DAY_FORMATS.filter(candidate => dated.every(heading => heading.fits.includes(candidate)));
+  const only = formats.length === 1 && formats[0]!.length === 1
+    ? formats[0]![0]
+    : undefined;
   return {
     example,
     formats,
-    candidates: common.length > 1
-      ? common
-      : [],
     mixed: read.length > 0,
-    ...(read.length === 0 && common.length === 1
-      ? { suggestion: common[0] }
+    ...(read.length === 0 && filled(only)
+      ? { suggestion: only }
       : {}),
   };
 }
