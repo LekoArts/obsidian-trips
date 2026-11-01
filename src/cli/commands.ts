@@ -264,6 +264,7 @@ async function draftActivities(ctx: CliContext, type: NoteType, request: CreateR
   if (type.role !== 'entry' || !filled(tripPath))
     throw new CliError('INVALID_INPUT', `A ${type.label} can't list activities`);
   const result = [];
+  const chosen = new Set<string>();
   for (const activity of request.activities) {
     if (filled(activity.day)) {
       if (!type.days.enabled)
@@ -272,6 +273,10 @@ async function draftActivities(ctx: CliContext, type: NoteType, request: CreateR
         throw new CliError('DATES_INVALID', `${activity.day} must be a YYYY-MM-DD day from ${request.start ?? '?'} to ${request.end ?? '?'}`);
     }
     const path = await findChild(ctx, tripPath, 'activity', activity.name);
+    // The form offers each activity once; listing one twice would repeat it in the entry's Activities property.
+    if (chosen.has(path))
+      throw new CliError('INVALID_INPUT', `${path} is listed more than once in activities; list each activity once`);
+    chosen.add(path);
     result.push({
       link: ctx.linkText(path, tripPath),
       day: activity.day,
@@ -294,6 +299,7 @@ function creationError(error: unknown): CliError {
 /** One note, built and written exactly as the creation form would. */
 export async function create(ctx: CliContext, request: CreateRequest) {
   const types = setUpTypes(ctx);
+  const profile = JSON.stringify(ctx.settings().profile);
   const type = types.find(item => item.id === request.kind);
   if (!type)
     throw new CliError('UNKNOWN_KIND', `Unknown kind ${request.kind}; use one of ${types.map(item => item.id).join(', ')} (see trips:kinds)`);
@@ -323,6 +329,9 @@ export async function create(ctx: CliContext, request: CreateRequest) {
     plan = await previewCreation(ctx.io, [draft]);
   }
   catch (error) { throw creationError(error); }
+  // As the form does: a note planned with kinds that have since changed would come out in the old format.
+  if (JSON.stringify(ctx.settings().profile) !== profile)
+    throw new CliError('CHANGED', 'The Trips setup changed while the note was being prepared; nothing was written. Check trips:kinds and retry.');
   const report = await applyCreation(ctx.io, plan);
   if (filled(report.failed)) {
     throw new CliError('WRITE_FAILED', `${String(report.error).replace(/^Error:\s*/, '')}. ${report.failed} may exist partly written; check it before retrying.`, {

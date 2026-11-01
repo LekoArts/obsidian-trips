@@ -237,6 +237,47 @@ it('finds an activity the index missed after one refresh, and gives up on one th
   })))).error?.message).toContain(TRAM);
 });
 
+it('refuses an activity listed twice, and a setup that changed while the note was prepared', async () => {
+  const { io, ctx, state } = cliVault({
+    [TRIP]: tripNote(),
+    [TRAM]: activityNote(),
+  }, [TRIP]);
+  const alfama = async (activities: unknown[]) => createWith(ctx, json({
+    kind: 'planning',
+    name: 'Alfama',
+    trip: 'Lisbon',
+    start: '2026-09-11',
+    end: '2026-09-12',
+    activities,
+  }));
+  const twice = await refused(io, 'INVALID_INPUT', async () => alfama([
+    { name: 'Tram 28' },
+    { name: TRAM, day: '2026-09-11' },
+  ]));
+  expect(twice.error?.message).toContain(`${TRAM} is listed more than once`);
+
+  // Reading the day plan's template stands in for any await during which the user edits the setup.
+  const read = io.read.bind(io);
+  io.read = async (path: string) => {
+    if (path === '_templates/Planning.md') {
+      state.settings = {
+        ...state.settings,
+        profile: {
+          ...state.settings.profile,
+          types: state.settings.profile.types.map(type => type.id === 'planning'
+            ? { ...type, label: 'Day' }
+            : type),
+        },
+      };
+    }
+    return read(path);
+  };
+  expect((await refused(io, 'CHANGED', async () => alfama([
+    { name: 'Tram 28', day: '2026-09-11' },
+  ]))).error?.message).toContain('nothing was written');
+  expect(io.files.has(ALFAMA)).toBe(false);
+});
+
 it('creates a trip, an activity and a day plan with the activity under its day, byte for byte', async () => {
   const { io, ctx, state } = cliVault();
   expect(await createWith(ctx, json({
