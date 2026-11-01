@@ -59,7 +59,7 @@ No flags. Trips with their entries and activities, plus `attention` and `attenti
  "attention": []}
 ```
 
-An entry's `activities` are the activities that belong to it; `days` shows which are on which day, in order. An activity with `days: []` is on no day yet.
+An entry's `activities` are the activities that belong to it; `days` shows which are on which day, in order. `outsideDates` (only present when needed) lists activities left on days outside the entry's dates, for example after rescheduling; take them off with `trips:assign action=remove … day=<that date>`. An activity's own `days` lists only days inside its entries' dates, so `days: []` means it's on no day there — check `outsideDates` before adding it again.
 
 ## trips:create
 
@@ -72,7 +72,7 @@ Creates one note.
 | `start`, `end` | `YYYY-MM-DD`; required for dated kinds, within the trip for children |
 | `trip` | The trip, by name or path; required for entries and activities, left out for trips |
 | `fields` | JSON only: `{"<field key>": value}` |
-| `activities` | JSON only, entries only: `[{"name": "Tram 28", "day": "2026-09-11"}]`; `day` is optional and needs `daySections` |
+| `activities` | JSON only, entries only: `[{"name": "Tram 28", "day": "2026-09-11"}]`; `day` is optional and needs `daySections`; list each activity once |
 
 ```bash
 obsidian vault=Travel trips:create json='{"kind":"advanced","name":"Lisbon","start":"2026-09-10","end":"2026-09-13","fields":{"Persons":["Ana","Rui"]}}'

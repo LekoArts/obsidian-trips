@@ -18,7 +18,7 @@ The Trips plugin keeps travel plans as ordinary Markdown notes: a trip note, chi
 Every command prints one JSON object. The CLI's exit code is always 0, even on failure, so always read the `ok` field:
 
 - `{"ok": true, "data": {…}}` — it worked.
-- `{"ok": false, "error": {"code": "…", "message": "…"}}` — nothing was written unless `error.report.completed` lists files. The message says what to do next.
+- `{"ok": false, "error": {"code": "…", "message": "…"}}` — it didn't work. Most errors happen before anything is written. Only `WRITE_FAILED` can leave changes behind: then `error.report.completed` lists files that were fully written, and `error.report.failed` names a file that may be partly written even when `completed` is empty. The message says what to do next.
 
 Run each `trips:*` command as its own shell command and read its whole reply. Don't chain it with `;`/`&&` or pipe it into other programs (`python3`, `grep`, …): if part of a combined command is refused or fails, the write may not run at all, or its reply may be lost. The replies are small enough to read as they are.
 
@@ -86,9 +86,9 @@ The CLI can't edit properties of existing notes, attach or detach notes from a t
 | `DAY_OUTSIDE_ENTRY` | Pick a day inside both the entry and the trip (the message gives the range), or reschedule first if the user wants. |
 | `NOT_ON_DAY` | The activity isn't where you said. Read `trips:list` and use its actual entry and day. |
 | `OUTSIDE_TRIP` | Ask the user before retrying with `extend`, unless they asked to grow the trip. |
-| `CHANGED` | Something changed while the command ran; nothing was written. Read `trips:list` and retry once. |
+| `CHANGED` | Something changed while the command ran (for example the Trips setup); nothing was written. Read `trips:list` (and `trips:kinds` for `trips:create`) and retry once. |
 | `CANNOT_EDIT` | Trips can't safely edit that note (for example an unclosed comment or duplicate headings). Tell the user to fix the note in Obsidian. |
-| `WRITE_FAILED` | Don't retry blindly. For `trips:create`, the note in the message may exist half-written; tell the user. For edits, `error.report.completed` lists files that were written (`[]` means none) and `error.report.failed` the one that failed; read `trips:list`, then tell the user what changed. |
+| `WRITE_FAILED` | Don't retry blindly. `error.report.completed` lists files that were written and `error.report.failed` the one that failed, which may be partly written (for `trips:create`, a new note without its properties). Read `trips:list` and tell the user what changed and which file to check. |
 | `INTERNAL` | Report the message to the user; don't retry in a loop. |
 
 A reply with `ok: true` and a `warning` means the note was written but something minor failed. The note exists; don't create it again, and pass the warning on to the user.
